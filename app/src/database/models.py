@@ -225,12 +225,12 @@ class Rate(Base):
     )
     user_id: Mapped[UUID | int] = (
         mapped_column(
-            Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+            Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True
         )
         if settings.test
         else mapped_column(
             UUID(as_uuid=True),
-            ForeignKey("users.id", ondelete="SET NULL"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=True,
         )
     )
