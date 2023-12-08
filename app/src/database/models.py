@@ -202,6 +202,9 @@ class Tag(Base):
         secondary=image_tag_m2m, back_populates="tags"
     )
 
+    def __str__(self):
+        return f"#{self.title}"
+
 
 class Rate(Base):
     __tablename__ = "rates"
