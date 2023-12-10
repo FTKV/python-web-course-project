@@ -46,7 +46,7 @@ redis_db0 = redis.from_url(
     encoding="utf-8",
     decode_responses=True,
 )
-pool_redis_db = redis.ConnectionPool.from_url(settings.redis_url)
+pool_redis_db = redis.ConnectionPool.from_url(settings.redis_url + "/1")
 
 
 async def get_redis_db1():
