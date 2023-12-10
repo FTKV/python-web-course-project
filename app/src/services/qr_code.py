@@ -11,9 +11,9 @@ def generate_qr_code(image_url: str) -> BytesIO:
     """
     Generates a PNG image with a QR code from the url of the image:
 
-    :param uuid: UUID of the image
-    :type uuid: str.
-    :return FileResponse: File in image/png format with QR-code url.
+    :param image_url: URL of the image
+    :type image_url: str.
+    :return BytesIO: File in image/png format with QR-code url.
     :rtype BytesIO:
     """
     qr = qrcode.QRCode(
