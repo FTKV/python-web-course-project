@@ -27,6 +27,23 @@ allowed_operations_activate_inactivate_set_role = RoleAccess([Role.administrator
 
 
 @router.get(
+    "/me",
+    response_model=UserDb,
+    dependencies=[Depends(allowed_operations_read_update)],
+)
+async def read_me(user: User = Depends(auth_service.get_current_user)):
+    """
+    Handles a GET-operation to '/me' users subroute and gets the current user.
+
+    :param user: The current user.
+    :type user: User
+    :return: The current user.
+    :rtype: User
+    """
+    return user
+
+
+@router.get(
     "/{username}",
     response_model=UserDb,
     dependencies=[Depends(allowed_operations_read_update)],
@@ -47,23 +64,6 @@ async def read_user(username: str, session: AsyncSession = Depends(get_session))
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    return user
-
-
-@router.get(
-    "/me",
-    response_model=UserDb,
-    dependencies=[Depends(allowed_operations_read_update)],
-)
-async def read_me(user: User = Depends(auth_service.get_current_user)):
-    """
-    Handles a GET-operation to '/me' users subroute and gets the current user.
-
-    :param user: The current user.
-    :type user: User
-    :return: The current user.
-    :rtype: User
-    """
     return user
 
 

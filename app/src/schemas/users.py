@@ -20,13 +20,6 @@ from fastapi import Form
 from src.database.models import Role
 
 
-# def date_validator(birthday):
-#     if len(birthday) == 0:
-#         return None
-#     birthday = datetime.strptime(birthday, "%Y-%m-%d").date()
-#     return birthday
-
-
 class UserModel(BaseModel):
     username: str = Field(min_length=2, max_length=254)
     email: EmailStr
