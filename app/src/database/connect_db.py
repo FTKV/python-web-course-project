@@ -40,8 +40,10 @@ async def get_session():
         await session.close()
 
 
-redis_db0 = redis.from_url(
-    settings.redis_url,
+redis_db0 = redis.Redis(
+    host=settings.redis_host,
+    port=settings.redis_port,
+    password=settings.redis_password,
     db=0,
     encoding="utf-8",
     decode_responses=True,
