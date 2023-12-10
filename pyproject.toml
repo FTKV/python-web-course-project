@@ -23,6 +23,7 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.6"
 libgravatar = "^1.0.4"
 cloudinary = "^1.36.0"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"
