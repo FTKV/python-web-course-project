@@ -25,10 +25,11 @@ allowed_operation_remove = RoleAccess([Role.administrator, Role.moderator])
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
-@router.get("/{image_id}", response_model=list[CommentResponse], dependencies=[Depends(allowed_operation_get)])
+
+@router.get("/{image_id}", response_model=List[CommentResponse])
 async def read_all_comments_to_photo(
     image_id: UUID4 | int, 
-    user: User = Depends(auth_service.get_current_user),
+    #user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     return await repository_comments.read_all_comments_to_photo(image_id, session)
@@ -36,8 +37,8 @@ async def read_all_comments_to_photo(
 @router.post(
     "/{image_id}", response_model=CommentResponse, status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operation_create)])
-async def create_comment(image_id: UUID4 | int, body: CommentModel, current_user: User = Depends(auth_service.get_current_user), session: AsyncSession = Depends(get_session)):
-    return await repository_comments.create_comment(image_id, body, current_user, session)
+async def create_comment_to_photo(image_id: UUID4 | int, body: CommentModel, current_user: User = Depends(auth_service.get_current_user), session: AsyncSession = Depends(get_session)):
+    return await repository_comments.create_comment_to_photo(image_id, body, current_user, session)
 
 
 
@@ -45,7 +46,7 @@ async def create_comment(image_id: UUID4 | int, body: CommentModel, current_user
     "/comment/{comment_id}", response_model=CommentResponse, status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operation_create)])
 async def create_comment_to_comment(comment_id: UUID4 | int, body: CommentModel, current_user: User = Depends(auth_service.get_current_user), session: AsyncSession = Depends(get_session)):
-    comment = await repository_comments.create_to_comment(comment_id, body, current_user, session)
+    comment = await repository_comments.create_comment_to_comment(comment_id, body, current_user, session)
     if comment is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found or forbiden to comment for comment"
