@@ -359,20 +359,20 @@ async def reset_password(
     return {"password_set_token": password_set_token}
 
 
-@router.patch("/set_password/{token}")
+@router.patch("/set_password")
 async def set_password(
-    token: str,
     body: UserPasswordSetModel,
+    credentials: HTTPAuthorizationCredentials = Security(security),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    Handles a PATCH-operation to '/set_password/{token}' auth subroute and sets the user's new password.
+    Handles a PATCH-operation to '/set_password' auth subroute and sets the user's new password.
 
-    :param token: The password set token.
-    :type token: str
     :param body: The request body with the user's new password.
     :type body: UserPasswordSetModel
+    :param credentials: The http authorization credentials of user to set the password for.
+    :type credentials: HTTPAuthorizationCredentials
     :param session: The database session.
     :type session: AsyncSession
     :param cache: The Redis client.
@@ -380,6 +380,7 @@ async def set_password(
     :return: The dict with a message.
     :rtype: dict
     """
+    token = credentials.credentials
     await auth_service.check_token_in_black_list(token, cache)
     email = await auth_service.decode_password_set_token(token)
     user = await repository_users.get_user_by_email(email, session)
