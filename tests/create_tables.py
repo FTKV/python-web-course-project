@@ -11,8 +11,8 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
 )
 
-from app.src.conf.config import settings
-from app.src.database.models import Base
+from src.conf.config import settings
+from src.database.models import Base
 
 
 engine: AsyncEngine = create_async_engine(
