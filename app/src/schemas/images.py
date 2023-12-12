@@ -12,13 +12,13 @@ from pydantic import BaseModel, Field, UUID4, ConfigDict
 
 
 class ImageModel(BaseModel):
-    user_id: UUID4 | int
-    descripition: str | None
+    # user_id: UUID4 | int
+    description: str | None
 
 
 @dataclass
-class UserCreateForm:
-    user_id: UUID4 | int
+class ImageCreateForm:
+    # user_id: UUID4 | int
     description: Annotated[str | None, Form(...)] = None
 
 

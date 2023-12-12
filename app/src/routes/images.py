@@ -16,7 +16,7 @@ from src.repository import images as repository_images
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 from src.services.qr_code import generate_qr_code
-from src.schemas.images import ImageModel, UserCreateForm, ImageDb
+from src.schemas.images import ImageModel, ImageCreateForm, ImageDb
 from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpdateForm
 from src.conf.config import settings
 
@@ -32,12 +32,12 @@ allowed_operations_activate_inactivate_set_role = RoleAccess([Role.administrator
 
 
 @router.post(
-    "/api/images/",
-    response_model=ImageModel,
-    # dependencies=[Depends(allowed_operations_read_update)],
+    "/",
+    response_model=ImageDb,
+    dependencies=[Depends(allowed_operations_read_update)],
 )
 async def create_image(
-    data: UserCreateForm = Depends(),
+    data: ImageCreateForm = Depends(),
     file: Annotated[UploadFile, File()] = None,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
@@ -46,14 +46,14 @@ async def create_image(
     """
     Handles a POST-operation to '/api/images/' images subroute and create image.
 
-    :param request: The http request object.
-    :type request: Request
-    :param data: The data for the user to create.
-    :type data: ImageModel
+    :param data: The data for the image to create.
+    :type data: ImageCreateForm
     :param file: The uploaded file to create avatar from.
     :type file: UploadFile
     :param session: Get the database session
     :type AsyncSession: The current session.
+    :param cache: The Redis client.
+    :type cache: Redis
     :return: The FileResponse.
     :rtype FileResponse: Reply with a file in image/png format.
     """
@@ -69,7 +69,7 @@ async def create_image(
 
 
 @router.get(
-    "/api/images/{image_id}/get_qr_code",
+    "/{image_id}/get_qr_code",
     response_class=FileResponse,
     dependencies=[Depends(allowed_operations_read_update)],
 )

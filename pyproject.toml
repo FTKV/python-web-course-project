@@ -22,7 +22,7 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.6"
 libgravatar = "^1.0.4"
-cloudinary = "^1.36.0"
+cloudinary = "^1.37.0"
 psycopg2-binary = "^2.9.9"
 qrcode = "^7.4.2"
 
