@@ -3,7 +3,7 @@ Module of comments' CRUD
 """
 
 from pydantic import UUID4
-from sqlalchemy import select, and_, desc
+from sqlalchemy import select, and_, desc, func
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -99,7 +99,41 @@ async def read_all_user_comments(
     comments = await session.execute(stmt)
     return comments.scalars()
 
+async def read_top_comments_to_photo(
+    image_id: UUID4 | int,
+    offset: int,
+    limit: int,
+    session: AsyncSession) -> list[Comment] | None:
+    """
+    Returns a list of top(popular) comments to the photo.
 
+    :param image_id: UUID4 | int: Specify the image for which comments are requested
+    :param offset: int: Specify the number of records to skip
+    :param limit: int: Limit the number of records returned
+    :param session: AsyncSession: Pass the database session to the function
+    :return: A list of comment objects
+    """
+    
+    child_count_subq = select(
+    Comment.parent_id,
+    func.count().label('num_children')
+    ).where(Comment.parent_id.isnot(None)).filter(Comment.image_id == image_id)\
+    .group_by(Comment.parent_id)\
+    .subquery()
+
+# Основной запрос для выбора записей с пустым parent_id и подсчетом количества комментариев
+    query = select(
+    Comment,
+    func.coalesce(child_count_subq.c.num_children, 0).label('num_children')
+    ).outerjoin(child_count_subq, Comment.id == child_count_subq.c.parent_id)\
+    .where(Comment.parent_id.is_(None)).filter(Comment.image_id == image_id)\
+    .order_by(func.coalesce(child_count_subq.c.num_children, 0).desc())
+    
+    query=query.offset(offset).limit(limit)
+    comme = await session.execute(query)
+    return comme.scalars()
+    
+    
 async def create_comment_to_photo(
     image_id: UUID4 | int,
     body: CommentModel,
