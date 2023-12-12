@@ -37,8 +37,8 @@ allowed_operations_activate_inactivate_set_role = RoleAccess([Role.administrator
     dependencies=[Depends(allowed_operations_read_update)],
 )
 async def create_image(
+    file: Annotated[UploadFile, File()],
     data: ImageCreateForm = Depends(),
-    file: Annotated[UploadFile, File()] = None,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
@@ -64,7 +64,7 @@ async def create_image(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error_message),
         )
-    image = await repository_images.create_image(data, file, user, session, cache)
+    image = await repository_images.create_image(file, data, user, session, cache)
     return image
 
 
