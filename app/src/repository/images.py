@@ -33,7 +33,7 @@ async def set_image_in_cache(image: Image, cache: Redis) -> None:
 
 
 async def create_image(
-    body: ImageModel, file: UploadFile, user: User, session: AsyncSession, cache: Redis
+    file: UploadFile, body: ImageModel, user: User, session: AsyncSession, cache: Redis
 ) -> Image:
     """
     Creates a new image.
@@ -49,9 +49,8 @@ async def create_image(
     :return: The newly created image.
     :rtype: Image
     """
-    if file:
-        r = await upload_avatar(file, user.username)
-    image = Image(**body.model_dump(), url=r.get("secure_url"))
+    url = await upload_avatar(file, user.username)
+    image = Image(**body.model_dump(), url=url, user_id=user.id)
     session.add(image)
     await session.commit()
     await session.refresh(image)

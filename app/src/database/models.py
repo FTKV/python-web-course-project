@@ -99,7 +99,7 @@ class Image(Base):
         )
     )
     url: Mapped[str] = mapped_column(String(1024), nullable=False)
-    descripition: Mapped[str] = mapped_column(String(1024), nullable=True)
+    description: Mapped[str] = mapped_column(String(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

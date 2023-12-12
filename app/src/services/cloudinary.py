@@ -102,6 +102,7 @@ async def upload_avatar(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Upload image error: {str(error_message)}",
         )
+    return src_url
 
 
 if __name__ == "__main__":
