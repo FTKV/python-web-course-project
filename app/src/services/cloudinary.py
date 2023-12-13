@@ -5,25 +5,34 @@ Module of Cloudinary class and methods
 
 import cloudinary
 import cloudinary.uploader
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, UploadFile, File, status
 
 from src.conf.config import settings
+
+# from src.database.models import User
 
 
 class CloudinaryService:
     def __init__(self) -> None:
-        config = cloudinary.config(
-            cloud_name=settings.cloudinary_cloud_name,
-            api_key=settings.cloudinary_api_key,
-            api_secret=settings.cloudinary_api_secret,
+        self.cloudinary_api_key = settings.cloudinary_api_key
+        self.cloudinary_api_secret = settings.cloudinary_api_secret
+        self.cloudinary_cloud_name = settings.cloudinary_cloud_name
+
+        self.api_name = settings.api_name.replace(" ", "_")
+        public_id = f"{self.api_name}/"
+        self.configure_cloudinary()
+
+    def configure_cloudinary(self):
+        cloudinary.config(
+            cloud_name=self.cloudinary_cloud_name,
+            api_key=self.cloudinary_api_key,
+            api_secret=self.cloudinary_api_secret,
             secure=True,
         )
-        api_name = settings.api_name.replace(" ", "_")
-        # public_id = f"{api_name}/{username}"
 
-    async def upload_image(self, file, public_id: str):
-        r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
-        return r
+    def upload_image(self, file, public_id):
+        response = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
+        return response["secure_url"]
 
     async def edit_image():
         pass
@@ -94,3 +103,8 @@ async def upload_avatar(
             detail=f"Upload image error: {str(error_message)}",
         )
     return src_url
+
+
+if __name__ == "__main__":
+    result = cloud_service.upload_image("/home/varadad/photo_2023-08-21_09-34-49.jpg")
+    print(result)

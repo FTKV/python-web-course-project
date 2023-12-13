@@ -12,23 +12,20 @@ from pydantic import BaseModel, Field, UUID4, ConfigDict
 
 
 class ImageModel(BaseModel):
-    user_id: UUID4 | int
-    descripition: str | None
+    description: str | None
 
 
 @dataclass
-class UserCreateForm:
-    user_id: UUID4 | int
+class ImageCreateForm:
     description: Annotated[str | None, Form(...)] = None
 
 
 class ImageDb(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID4 | int
     url: str
     user_id: UUID4 | int
     description: str | None
     created_at: datetime
     updated_at: datetime
-    rates: int
-
-    model_config = ConfigDict(from_attributes=True)

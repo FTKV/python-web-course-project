@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models import Tag, User, Image, image_tag_m2m
 from src.schemas.images import ImageModel, ImageDb
 from src.conf.config import settings
-from src.services.cloudinary import cloud_service
+from src.services.cloudinary import upload_avatar
 
 
 async def set_image_in_cache(image: Image, cache: Redis) -> None:
@@ -33,7 +33,7 @@ async def set_image_in_cache(image: Image, cache: Redis) -> None:
 
 
 async def create_image(
-    body: ImageModel, file: UploadFile, user: User, session: AsyncSession, cache: Redis
+    file: UploadFile, body: ImageModel, user: User, session: AsyncSession, cache: Redis
 ) -> Image:
     """
     Creates a new image.
@@ -49,8 +49,7 @@ async def create_image(
     :return: The newly created image.
     :rtype: Image
     """
-    if file:
-        url = await cloud_service.upload_image(file, username=user.username)
+    url = await upload_avatar(file, user.username)
     image = Image(**body.model_dump(), url=url, user_id=user.id)
     session.add(image)
     await session.commit()

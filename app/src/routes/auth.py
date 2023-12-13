@@ -53,8 +53,8 @@ security = HTTPBearer()
 async def signup(
     background_tasks: BackgroundTasks,
     request: Request,
-    data: UserCreateForm = Depends(),
     file: Annotated[UploadFile, File()] = None,
+    data: UserCreateForm = Depends(),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
