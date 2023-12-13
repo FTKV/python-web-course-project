@@ -24,7 +24,7 @@ class CloudinaryService:
             secure=True,
         )
 
-    def gen_image_name(self, name):
+    def gen_image_name(self, username, filename):
         """
         Generate image name.
 
@@ -33,10 +33,10 @@ class CloudinaryService:
         :return: Full path to the image storage location in the cloud storage.
         :rtype: str
         """
-        public_id = CloudinaryService.public_id + name
+        public_id = CloudinaryService.public_id + f"/{username}/{filename}"
         return public_id
 
-    async def upload_image(self, file, filename):
+    async def upload_image(self, file, username, filename):
         """
         Uploads an user's image.
 
@@ -47,7 +47,7 @@ class CloudinaryService:
         :return: The file upload result
         :rtype: json
         """
-        public_id = self.gen_image_name(filename)
+        public_id = self.gen_image_name(username, filename)
         try:
             result = cloudinary.uploader.upload(
                 file, public_id=public_id, overwrite=True
@@ -88,7 +88,7 @@ class CloudinaryService:
         except Exception as e:
             print(f"Error deleting image: {e}")
 
-    async def upload_avatar(self, file, username):
+    async def upload_avatar(self, file, username, filename):
         """
         Uploads an user's avatar.
 
@@ -99,7 +99,7 @@ class CloudinaryService:
         :return: The URL of uploaded avatar.
         :rtype: str
         """
-        public_id = self.gen_image_name(username)
+        public_id = self.gen_image_name(username, filename)
         r = self.upload_image(file, public_id)
         avatar_url = cloudinary.CloudinaryImage(public_id).build_url(
             width=250, height=250, crop="fill", version=r.get("version")
