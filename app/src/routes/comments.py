@@ -27,10 +27,7 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 @router.get(
     "/{image_id}",
     response_model=List[CommentResponse],
-    dependencies=[
-        Depends(allowed_operation_get),
-        Depends(auth_service.get_current_user),
-    ],
+    dependencies=[Depends(allowed_operation_get)],
 )
 async def read_all_comments_to_photo(
     image_id: UUID4 | int,
@@ -60,10 +57,7 @@ async def read_all_comments_to_photo(
 @router.get(
     "/{comment_id}/comments",
     response_model=List[CommentResponse],
-    dependencies=[
-        Depends(allowed_operation_get),
-        Depends(auth_service.get_current_user),
-    ],
+    dependencies=[Depends(allowed_operation_get)],
 )
 async def read_all_comments_to_comment(
     comment_id: UUID4 | int,
@@ -272,10 +266,7 @@ async def update_comment(
 @router.delete(
     "/{comment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[
-        Depends(allowed_operation_remove),
-        Depends(auth_service.get_current_user),
-    ],
+    dependencies=[Depends(allowed_operation_remove)],
 )
 async def delete_comment(
     comment_id: UUID4 | int,
