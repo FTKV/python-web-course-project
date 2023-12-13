@@ -125,6 +125,7 @@ async def update_image(
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
+        image.description = body.description
         await session.commit()
     return image
 
