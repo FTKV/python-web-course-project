@@ -50,7 +50,9 @@ async def create_image(
     :return: The newly created image.
     :rtype: Image
     """
-    result = await cloudinary_service.upload_image(file.file, file.filename)
+    result = await cloudinary_service.upload_image(
+        file.file, user.username, file.filename
+    )
     image_url = await cloudinary_service.get_image_url(result)
 
     image = Image(**body.model_dump(), url=image_url, user_id=user.id)
