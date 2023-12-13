@@ -146,6 +146,7 @@ async def patch_image(
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
+        image.url = body.url
         await session.commit()
     return image
 
