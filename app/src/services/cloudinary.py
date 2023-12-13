@@ -50,8 +50,11 @@ class CloudinaryService:
         public_id = self.gen_image_name(username, filename)
         try:
             result = cloudinary.uploader.upload(
-                file, public_id=public_id, overwrite=True
+                file,
+                public_id=public_id,
+                overwrite=True,
             )
+            print(result)
             return result
         except Exception as e:
             print(f"Error uploading image: {e}")
@@ -73,7 +76,10 @@ class CloudinaryService:
             print(f"Error getting image URL: {e}")
             return None
 
-    async def delete_image(self, image_url):
+    async def delete_image(
+        self,
+        image_url,
+    ):
         """
         Delete an image.
 
@@ -88,7 +94,12 @@ class CloudinaryService:
         except Exception as e:
             print(f"Error deleting image: {e}")
 
-    async def upload_avatar(self, file, username, filename):
+    async def upload_avatar(
+        self,
+        file,
+        username,
+        filename,
+    ):
         """
         Uploads an user's avatar.
 
@@ -96,11 +107,12 @@ class CloudinaryService:
         :type file: UploadFile
         :param username: The username of the user to upload avatar.
         :type username: User
+        :type filename: The name of image file
         :return: The URL of uploaded avatar.
         :rtype: str
         """
         public_id = self.gen_image_name(username, filename)
-        r = self.upload_image(file, public_id)
+        r = await self.upload_image(file, username, filename)
         avatar_url = cloudinary.CloudinaryImage(public_id).build_url(
             width=250, height=250, crop="fill", version=r.get("version")
         )
@@ -115,45 +127,44 @@ class CloudinaryService:
             ]
         )
         # Result: srt = <img src="https://res.cloudinary.com/dszct2q9m/image/upload/c_thumb,g_face,h_200,w_200/r_max/f_auto/cogaj"/>
-        print(result)
 
 
 cloudinary_service = CloudinaryService()
 
 
-async def upload_avatar(
-    file: UploadFile,
-    username: str,
-):
-    """
-    Uploads an user's avatar.
+# async def upload_avatar(
+#     file: UploadFile,
+#     username: str,
+# ):
+#     """
+#     Uploads an user's avatar.
 
-    :param file: The uploaded file of avatar.
-    :type file: UploadFile
-    :param username: The username of the user to upload avatar.
-    :type username: User
-    :return: The URL of uploaded avatar.
-    :rtype: str
-    """
-    cloudinary.config(
-        cloud_name=settings.cloudinary_cloud_name,
-        api_key=settings.cloudinary_api_key,
-        api_secret=settings.cloudinary_api_secret,
-        secure=True,
-    )
-    api_name = settings.api_name.replace(" ", "_")
-    try:
-        r = cloudinary.uploader.upload(
-            file.file,
-            public_id=f"{api_name}/{username}",
-            overwrite=True,
-        )
-        src_url = cloudinary.CloudinaryImage(f"{api_name}/{username}").build_url(
-            width=250, height=250, crop="fill", version=r.get("version")
-        )
-    except Exception as error_message:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Upload image error: {str(error_message)}",
-        )
-    return src_url
+#     :param file: The uploaded file of avatar.
+#     :type file: UploadFile
+#     :param username: The username of the user to upload avatar.
+#     :type username: User
+#     :return: The URL of uploaded avatar.
+#     :rtype: str
+#     """
+#     cloudinary.config(
+#         cloud_name=settings.cloudinary_cloud_name,
+#         api_key=settings.cloudinary_api_key,
+#         api_secret=settings.cloudinary_api_secret,
+#         secure=True,
+#     )
+#     api_name = settings.api_name.replace(" ", "_")
+#     try:
+#         r = cloudinary.uploader.upload(
+#             file.file,
+#             public_id=f"{api_name}/{username}",
+#             overwrite=True,
+#         )
+#         src_url = cloudinary.CloudinaryImage(f"{api_name}/{username}").build_url(
+#             width=250, height=250, crop="fill", version=r.get("version")
+#         )
+#     except Exception as error_message:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=f"Upload image error: {str(error_message)}",
+#         )
+#     return src_url
