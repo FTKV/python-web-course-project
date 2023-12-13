@@ -13,7 +13,7 @@ from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Tag, User, Image, image_tag_m2m
-from src.schemas.images import ImageModel, ImageDb
+from src.schemas.images import ImageModel, ImageDb, ImageUrlModel
 from src.conf.config import settings
 from src.services.cloudinary import cloudinary_service
 
@@ -111,6 +111,26 @@ async def get_user_images(user_id, session: AsyncSession) -> list | None:
 
 async def update_image(
     image_id: UUID, body: ImageModel, user: User, session: AsyncSession
+) -> Image | None:
+    """
+    Updates existing image
+
+    :param image_id: UUID | int: Find the image to update
+    :param body: ImageModel: Get the fields from the request body
+    :param user: User: Check if the user is allowed to update the image
+    :param session: AsyncSession: Pass the current session to the function
+    :return: An image  or None
+    """
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user.id))
+    image = await session.execute(stmt)
+    image = image.scalar()
+    if image:
+        await session.commit()
+    return image
+
+
+async def patch_image(
+    image_id: UUID, body: ImageUrlModel, user: User, session: AsyncSession
 ) -> Image | None:
     """
     Updates existing image

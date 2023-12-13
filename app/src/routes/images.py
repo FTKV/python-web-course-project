@@ -183,14 +183,14 @@ async def update_image(
     response_model=ImageDb,
     dependencies=[Depends(allowed_operations_read_update)],
 )
-async def update_image(
+async def patch_image(
     image_id: UUID4 | int,
     body: ImageUrlModel,
     current_user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     """
-    The update_image function updates a image in the database.
+    The update_image function patch a image in the database.
         The function takes an image_id, and a body of type ImageModel.
         It returns the updated image.
 
@@ -200,7 +200,7 @@ async def update_image(
     :param session: AsyncSession: The database session
     :return ImageDb: A image model object
     """
-    image = await repository_images.update_image(image_id, body, current_user, session)
+    image = await repository_images.patch_image(image_id, body, current_user, session)
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
