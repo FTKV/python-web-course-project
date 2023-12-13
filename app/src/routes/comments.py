@@ -2,6 +2,7 @@
 Module of comments' routes
 """
 
+
 from pydantic import UUID4
 from typing import List
 

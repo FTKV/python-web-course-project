@@ -2,21 +2,19 @@
 Module of comments' CRUD
 """
 
+
 from pydantic import UUID4
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 
 from src.database.models import Comment, User
 from src.schemas.comments import CommentModel
 
 
 async def read_all_comments_to_photo(
-    image_id: UUID4 | int,
-    offset: int,
-    limit: int,
-    session: AsyncSession) -> list[Comment] | None:
+    image_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
+) -> ScalarResult:
     """
     Returns a list of comments that are associated with the image_id
         parameter. The offset and limit parameters are used to paginate the results.
@@ -38,10 +36,8 @@ async def read_all_comments_to_photo(
 
 
 async def read_all_comments_to_comment(
-    comment_id: UUID4 | int,
-    offset: int,
-    limit: int,
-    session: AsyncSession) -> list[Comment] | None:
+    comment_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
+) -> ScalarResult:
     """
     Returns all comments to a comment.
 
@@ -57,15 +53,14 @@ async def read_all_comments_to_comment(
     comments = await session.execute(stmt)
     return comments.scalars()
 
+
 async def read_all_my_comments(
-    user: User,
-    offset : int,
-    limit: int,
-    session: AsyncSession) -> list[Comment] | None :
+    user: User, offset: int, limit: int, session: AsyncSession
+) -> ScalarResult:
     """
     Returns a list of comments that the user has made.
     The function takes in an offset and limit to paginate through results.
-    
+
     :param user: User: Identify the user who is making the request
     :param offset : int: Specify the number of rows to skip
     :param limit: int: Limit the number of comments returned
@@ -78,11 +73,10 @@ async def read_all_my_comments(
     comments = await session.execute(stmt)
     return comments.scalars()
 
+
 async def read_all_user_comments(
-    user_id: UUID4 | int,
-    offset : int,
-    limit: int,
-    session: AsyncSession) -> list[Comment] | None:
+    user_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
+) -> ScalarResult:
     """
     Returns a list of comments for the user with the given id.
     The function takes in an offset and limit to paginate through results.
@@ -99,11 +93,10 @@ async def read_all_user_comments(
     comments = await session.execute(stmt)
     return comments.scalars()
 
+
 async def read_top_comments_to_photo(
-    image_id: UUID4 | int,
-    offset: int,
-    limit: int,
-    session: AsyncSession) -> list[Comment] | None:
+    image_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
+) -> ScalarResult:
     """
     Returns a list of top(popular) comments to the photo.
 
@@ -113,32 +106,35 @@ async def read_top_comments_to_photo(
     :param session: AsyncSession: Pass the database session to the function
     :return: A list of comment objects
     """
-    
-    child_count_subq = select(
-    Comment.parent_id,
-    func.count().label('num_children')
-    ).where(Comment.parent_id.isnot(None)).filter(Comment.image_id == image_id)\
-    .group_by(Comment.parent_id)\
-    .subquery()
 
-# Основной запрос для выбора записей с пустым parent_id и подсчетом количества комментариев
-    query = select(
-    Comment,
-    func.coalesce(child_count_subq.c.num_children, 0).label('num_children')
-    ).outerjoin(child_count_subq, Comment.id == child_count_subq.c.parent_id)\
-    .where(Comment.parent_id.is_(None)).filter(Comment.image_id == image_id)\
-    .order_by(func.coalesce(child_count_subq.c.num_children, 0).desc())
-    
-    query=query.offset(offset).limit(limit)
-    comme = await session.execute(query)
-    return comme.scalars()
-    
-    
+    child_count_subq = (
+        select(Comment.parent_id, func.count().label("num_children"))
+        .where(Comment.parent_id.isnot(None))
+        .filter(Comment.image_id == image_id)
+        .group_by(Comment.parent_id)
+        .subquery()
+    )
+
+    # Основной запрос для выбора записей с пустым parent_id и подсчетом количества комментариев
+    query = (
+        select(
+            Comment,
+            func.coalesce(child_count_subq.c.num_children, 0).label("num_children"),
+        )
+        .outerjoin(child_count_subq, Comment.id == child_count_subq.c.parent_id)
+        .where(Comment.parent_id.is_(None))
+        .filter(Comment.image_id == image_id)
+        .order_by(func.coalesce(child_count_subq.c.num_children, 0).desc())
+    )
+
+    query = query.offset(offset).limit(limit)
+    comment = await session.execute(query)
+    return comment.scalars()
+
+
 async def create_comment_to_photo(
-    image_id: UUID4 | int,
-    body: CommentModel,
-    user: User,
-    session: AsyncSession) -> Comment | None:
+    image_id: UUID4 | int, body: CommentModel, user: User, session: AsyncSession
+) -> Comment | None:
     """
     Creates a comment to an image.
 
@@ -148,9 +144,7 @@ async def create_comment_to_photo(
     :param session: AsyncSession: Create a new comment object in the database
     :return: A comment object
     """
-    comment = Comment(image_id=image_id,
-                      text=body.text,
-                      user_id=user.id)
+    comment = Comment(image_id=image_id, text=body.text, user_id=user.id)
     session.add(comment)
     await session.commit()
     await session.refresh(comment)
@@ -158,10 +152,8 @@ async def create_comment_to_photo(
 
 
 async def create_comment_to_comment(
-    comment_id: UUID4 | int,
-    body: CommentModel,
-    user: User,
-    session: AsyncSession) -> Comment | None:
+    comment_id: UUID4 | int, body: CommentModel, user: User, session: AsyncSession
+) -> Comment | None:
     """
     Creates a comment to an existing comment.
 
@@ -175,9 +167,12 @@ async def create_comment_to_comment(
     parent_comment = await session.execute(stmt)
     parent_comment = parent_comment.scalar()
     if not parent_comment.parent_id:
-        comment = Comment(image_id=parent_comment.image_id,
-                          text=body.text, user_id=user.id,
-                          parent_id=parent_comment.id)
+        comment = Comment(
+            image_id=parent_comment.image_id,
+            text=body.text,
+            user_id=user.id,
+            parent_id=parent_comment.id,
+        )
         session.add(comment)
         await session.commit()
         await session.refresh(comment)
@@ -186,10 +181,8 @@ async def create_comment_to_comment(
 
 
 async def update_comment(
-    comment_id: UUID4 | int,
-    body: CommentModel,
-    user: User,
-    session: AsyncSession) -> Comment | None:
+    comment_id: UUID4 | int, body: CommentModel, user: User, session: AsyncSession
+) -> Comment | None:
     """
     Updates existing comment
 
@@ -211,8 +204,8 @@ async def update_comment(
 
 
 async def delete_comment(
-    comment_id: UUID4 | int,
-    session: AsyncSession) -> Comment | None:
+    comment_id: UUID4 | int, session: AsyncSession
+) -> Comment | None:
     """
     Deletes a comment from the database.
 
