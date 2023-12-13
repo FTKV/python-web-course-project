@@ -4,17 +4,18 @@ Module of images' CRUD
 
 
 import pickle
+from typing import List
 
 from fastapi import UploadFile
 from redis.asyncio.client import Redis
-from sqlalchemy import select, UUID
+from sqlalchemy import select, UUID, and_
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Tag, User, Image, image_tag_m2m
 from src.schemas.images import ImageModel, ImageDb
 from src.conf.config import settings
-from src.services.cloudinary import upload_avatar
+from src.services.cloudinary import cloudinary_service
 
 
 async def set_image_in_cache(image: Image, cache: Redis) -> None:
@@ -49,8 +50,10 @@ async def create_image(
     :return: The newly created image.
     :rtype: Image
     """
-    url = await upload_avatar(file, user.username)
-    image = Image(**body.model_dump(), url=url, user_id=user.id)
+    result = await cloudinary_service.upload_image(file.file, file.filename)
+    image_url = await cloudinary_service.get_image_url(result)
+
+    image = Image(**body.model_dump(), url=image_url, user_id=user.id)
     session.add(image)
     await session.commit()
     await session.refresh(image)
@@ -72,3 +75,74 @@ async def get_image_by_id(image_id: UUID, session: AsyncSession) -> Image | None
     stmt = select(Image).filter(Image.id == image_id)
     image = await session.execute(stmt)
     return image.scalar()
+
+
+async def get_my_images(user_id, session: AsyncSession) -> list | None:
+    """
+    Gets an image with the specified id.
+
+    :param image_id: The ID of the image to get.
+    :type image_id: UUID
+    :param session: The database session.
+    :type session: AsyncSession
+    :return: The image with the specified ID, or None if it does not exist.
+    :rtype: Image | None
+    """
+    stmt = select(Image).filter(user_id == user_id)
+    images = await session.execute(stmt)
+    return images.scalar()
+
+
+async def get_user_images(user_id, session: AsyncSession) -> list | None:
+    """
+    Gets an image with the specified id.
+
+    :param image_id: The ID of the image to get.
+    :type image_id: UUID
+    :param session: The database session.
+    :type session: AsyncSession
+    :return: The image with the specified ID, or None if it does not exist.
+    :rtype: Image | None
+    """
+    stmt = select(Image).filter(user_id == user_id)
+    images = await session.execute(stmt)
+    return images.scalar()
+
+
+async def update_image(
+    image_id: UUID, body: ImageModel, user: User, session: AsyncSession
+) -> Image | None:
+    """
+    Updates existing image
+
+    :param image_id: UUID | int: Find the image to update
+    :param body: ImageModel: Get the fields from the request body
+    :param user: User: Check if the user is allowed to update the image
+    :param session: AsyncSession: Pass the current session to the function
+    :return: An image  or None
+    """
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user.id))
+    image = await session.execute(stmt)
+    image = image.scalar()
+    if image:
+        await session.commit()
+    return image
+
+
+async def delete_image(image_id: UUID | int, session: AsyncSession) -> Image | None:
+    """
+    Deletes an image from the database.
+
+    :param image_id: UUID | int: Specify the id of the image to delete
+    :param user: User: Check if the user is authorized to delete the image
+    :param session: AsyncSession: Pass the session to the function
+    :return: The Image object that was deleted
+    """
+    stmt = select(Image).filter(Image.id == image_id)
+    image = await session.execute(stmt)
+    image = image.scalar()
+    if image:
+        await cloudinary_service.delete_image(image.url)
+        await session.delete(image)
+        await session.commit()
+    return image

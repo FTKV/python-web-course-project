@@ -4,6 +4,9 @@ Module of images' routes
 
 
 from dataclasses import asdict
+from typing import List
+
+from pydantic import UUID4
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
 from fastapi.responses import FileResponse
@@ -16,7 +19,7 @@ from src.repository import images as repository_images
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 from src.services.qr_code import generate_qr_code
-from src.schemas.images import ImageModel, ImageCreateForm, ImageDb
+from src.schemas.images import ImageModel, ImageCreateForm, ImageDb, ImageUrlModel
 from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpdateForm
 from src.conf.config import settings
 
@@ -28,6 +31,7 @@ router = APIRouter(prefix="/images", tags=["images"])
 allowed_operations_read_update = RoleAccess(
     [Role.administrator, Role.moderator, Role.user]
 )
+allowed_operation_remove = RoleAccess([Role.administrator])
 allowed_operations_activate_inactivate_set_role = RoleAccess([Role.administrator])
 
 
@@ -98,3 +102,136 @@ async def get_qr_code(
         filename="qrcode.png",
         status_code=200,
     )
+
+
+@router.get(
+    "/my_images",
+    response_model=ImageDb,
+    dependencies=[Depends(allowed_operations_read_update)],
+)
+async def get_my_images(
+    user: User = Depends(auth_service.get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> List:
+    """
+    Handles a GET-operation to '/my_images' images subroute and gets images of current user.
+
+    :param user: The current user.
+    :type user: User
+    :return: Images of the current user.
+    :rtype: Images
+    """
+    images = await repository_images.get_my_images(user.id, session)
+    return images
+
+
+@router.get(
+    "/{user_id}",
+    response_model=ImageDb,
+    dependencies=[Depends(allowed_operations_read_update)],
+)
+async def get_user_images(
+    user_id,
+    user: User = Depends(auth_service.get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> List:
+    """
+    Handles a GET-operation to '/{username}' users subroute and gets the current user.
+
+    :param user: The current user.
+    :type user: User
+    :return: The current user.
+    :rtype: User
+    """
+    images = await repository_images.get_user_images(user.id, session)
+    return images
+
+
+@router.patch(
+    "/{image_id}",
+    response_model=ImageDb,
+    dependencies=[Depends(allowed_operations_read_update)],
+)
+async def update_image(
+    image_id: UUID4 | int,
+    body: ImageModel,
+    current_user: User = Depends(auth_service.get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    The update_image function updates a image in the database.
+        The function takes an image_id, and a body of type ImageModel.
+        It returns the updated image.
+
+    :param image_id: UUID4 | int: The image id from the database
+    :param body: ImageModel: The data from the request body
+    :param current_user: User: The user who is currently logged in
+    :param session: AsyncSession: The database session
+    :return ImageDb: A ImageDb object
+    """
+    image = await repository_images.update_image(image_id, body, current_user, session)
+    if image is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image not found or forbiden to change for you",
+        )
+    return image
+
+
+@router.put(
+    "/{image_id}",
+    response_model=ImageDb,
+    dependencies=[Depends(allowed_operations_read_update)],
+)
+async def update_image(
+    image_id: UUID4 | int,
+    body: ImageUrlModel,
+    current_user: User = Depends(auth_service.get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    The update_image function updates a image in the database.
+        The function takes an image_id, and a body of type ImageModel.
+        It returns the updated image.
+
+    :param image_id: UUID4 | int: The image id from the database
+    :param body: ImageModel: The data from the request body
+    :param current_user: User: The user who is currently logged in
+    :param session: AsyncSession: The database session
+    :return ImageDb: A image model object
+    """
+    image = await repository_images.update_image(image_id, body, current_user, session)
+    if image is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image not found or forbiden to change for you",
+        )
+    return image
+
+
+@router.delete(
+    "/{image_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[
+        Depends(allowed_operation_remove),
+        Depends(auth_service.get_current_user),
+    ],
+)
+async def delete_image(
+    image_id: UUID4 | int,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Deletes an image from the database.
+
+    :param image_id: UUID4 | int: Specify the id of the image to be deleted
+    :param current_user: User: Get the current user from the auth_service
+    :param session: AsyncSession: Pass the database session to the repository layer
+    :return: None, so the response will be empty
+    """
+    image = await repository_images.delete_image(image_id, session)
+    if image is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+        )
+    return None

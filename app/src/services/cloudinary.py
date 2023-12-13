@@ -13,58 +13,112 @@ from src.conf.config import settings
 
 
 class CloudinaryService:
-    def __init__(self) -> None:
-        self.cloudinary_api_key = settings.cloudinary_api_key
-        self.cloudinary_api_secret = settings.cloudinary_api_secret
-        self.cloudinary_cloud_name = settings.cloudinary_cloud_name
+    api_name = settings.api_name.replace(" ", "_")
+    public_id = f"{api_name}/"
 
-        self.api_name = settings.api_name.replace(" ", "_")
-        public_id = f"{self.api_name}/"
-        self.configure_cloudinary()
-
-    def configure_cloudinary(self):
+    def __init__(self):
         cloudinary.config(
-            cloud_name=self.cloudinary_cloud_name,
-            api_key=self.cloudinary_api_key,
-            api_secret=self.cloudinary_api_secret,
+            cloud_name=settings.cloudinary_cloud_name,
+            api_key=settings.cloudinary_api_key,
+            api_secret=settings.cloudinary_api_secret,
             secure=True,
         )
 
-    def upload_image(self, file, public_id):
-        response = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
-        return response["secure_url"]
+    def gen_image_name(self, name):
+        """
+        Generate image name.
 
-    async def edit_image():
-        pass
+        :param name: Image name.
+        :param type: str
+        :return: Full path to the image storage location in the cloud storage.
+        :rtype: str
+        """
+        public_id = CloudinaryService.public_id + name
+        return public_id
 
-    async def delete_image():
-        pass
+    async def upload_image(self, file, filename):
+        """
+        Uploads an user's image.
 
-    async def upload_avatar():
-        pass
-        # await upload_image(...)
+        :param file: The uploaded file of avatar.
+        :type file: BinaryIO
+        :param filename: The filename of the image to upload.
+        :type filename: str
+        :return: The file upload result
+        :rtype: json
+        """
+        public_id = self.gen_image_name(filename)
+        try:
+            result = cloudinary.uploader.upload(
+                file, public_id=public_id, overwrite=True
+            )
+            return result
+        except Exception as e:
+            print(f"Error uploading image: {e}")
+            return None
 
+    async def get_image_url(self, result):
+        """
+        Get image url from cloudinary json response.
 
-cloud_service = CloudinaryService()
+        :param result: json response.
+        :type result: json
+        :return: Url of uploaded image.
+        :rtype: str
+        """
+        try:
+            image_url = result.get("secure_url")
+            return image_url
+        except Exception as e:
+            print(f"Error getting image URL: {e}")
+            return None
 
-"""
- @staticmethod
-    def generate_name_avatar(email: str):
-        name = hashlib.sha256(email.encode("utf-8")).hexdigest()[:12]
-        return f"avatars/{name}"
+    async def delete_image(self, image_url):
+        """
+        Delete an image.
 
-    @staticmethod
-    def upload(file, public_id: str):
-        r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
-        return r
+        :param image_url: The image to delete
+        :type image_url: URL image
+        :return: Result
+        :rtype: str
+        """
+        try:
+            result = cloudinary.uploader.destroy(image_url)
+            print(f"Image deleted: {result}")
+        except Exception as e:
+            print(f"Error deleting image: {e}")
 
-    @staticmethod
-    def get_url_for_avatar(public_id, r):
-        src_url = cloudinary.CloudinaryImage(public_id).build_url(
+    async def upload_avatar(self, file, username):
+        """
+        Uploads an user's avatar.
+
+        :param file: The uploaded file of avatar.
+        :type file: UploadFile
+        :param username: The username of the user to upload avatar.
+        :type username: User
+        :return: The URL of uploaded avatar.
+        :rtype: str
+        """
+        public_id = self.gen_image_name(username)
+        r = self.upload_image(file, public_id)
+        avatar_url = cloudinary.CloudinaryImage(public_id).build_url(
             width=250, height=250, crop="fill", version=r.get("version")
         )
-        return src_url
-"""
+        return avatar_url
+
+    async def edit_image_face(self, file, public_id):
+        result = cloudinary.CloudinaryImage(public_id).image(
+            transformation=[
+                {"gravity": "face", "height": 200, "width": 200, "crop": "thumb"},
+                {"radius": "max"},
+                {"fetch_format": "auto"},
+            ]
+        )
+        # Result: srt = <img src="https://res.cloudinary.com/dszct2q9m/image/upload/c_thumb,g_face,h_200,w_200/r_max/f_auto/cogaj"/>
+        print(result)
+
+
+cloudinary_service = CloudinaryService()
 
 
 async def upload_avatar(
@@ -103,8 +157,3 @@ async def upload_avatar(
             detail=f"Upload image error: {str(error_message)}",
         )
     return src_url
-
-
-if __name__ == "__main__":
-    result = cloud_service.upload_image("/home/varadad/photo_2023-08-21_09-34-49.jpg")
-    print(result)
