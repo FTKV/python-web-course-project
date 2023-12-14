@@ -29,6 +29,8 @@ class ImageDb(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
+    rate: float | None
+
 
 
 class ImageUrlModel(BaseModel):
