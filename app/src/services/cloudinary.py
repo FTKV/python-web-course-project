@@ -24,7 +24,7 @@ class CloudinaryService:
             secure=True,
         )
 
-    def gen_image_name(self, username, filename):
+    def gen_image_name(self, username, filename, album=None):
         """
         Generate image name.
 
@@ -33,10 +33,14 @@ class CloudinaryService:
         :return: Full path to the image storage location in the cloud storage.
         :rtype: str
         """
-        public_id = CloudinaryService.public_id + f"/{username}/{filename}"
+        public_id = (
+            CloudinaryService.public_id + f"/{username}/{album}/{filename}"
+            if album
+            else CloudinaryService.public_id + f"/{username}/{filename}"
+        )
         return public_id
 
-    async def upload_image(self, file, username, filename):
+    async def upload_image(self, file, username, filename, album=None):
         """
         Uploads an user's image.
 
@@ -47,7 +51,7 @@ class CloudinaryService:
         :return: The file upload result
         :rtype: json
         """
-        public_id = self.gen_image_name(username, filename)
+        public_id = self.gen_image_name(username, filename, album)
         try:
             result = cloudinary.uploader.upload(
                 file,
@@ -111,8 +115,8 @@ class CloudinaryService:
         :return: The URL of uploaded avatar.
         :rtype: str
         """
-        public_id = self.gen_image_name(username, filename)
-        r = await self.upload_image(file, username, filename)
+        public_id = self.gen_image_name(username, filename, album="avatars")
+        r = await self.upload_image(file, username, filename, album="avatars")
         avatar_url = cloudinary.CloudinaryImage(public_id).build_url(
             width=250, height=250, crop="fill", version=r.get("version")
         )
