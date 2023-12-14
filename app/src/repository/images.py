@@ -133,7 +133,11 @@ async def update_image(
 
 
 async def patch_image(
-    image_id: UUID, body: ImageUrlModel, user: User, session: AsyncSession
+    image_id: UUID,
+    transformation: str,
+    body: ImageUrlModel,
+    user: User,
+    session: AsyncSession,
 ) -> Image | None:
     """
     Updates existing image
@@ -148,7 +152,14 @@ async def patch_image(
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
-        image.url = body.url
+        if transformation:
+            url = await cloudinary_service.image_transformations(
+                image.url,
+                transformation,
+            )
+        else:
+            url = body.url
+        image.url = url
         await session.commit()
     return image
 
