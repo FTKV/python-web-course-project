@@ -15,7 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.conf.config import settings
 from src.database.models import Role, User
 from src.schemas.users import UserModel, UserUpdateModel
-from src.services.cloudinary import upload_avatar
+
+# from src.services.cloudinary import upload_avatar
+from src.services.cloudinary import cloudinary_service
 
 
 async def set_user_in_cache(user: User, cache: Redis) -> None:
@@ -105,7 +107,9 @@ async def create_user(
     else:
         role = Role.administrator
     if file:
-        avatar = await upload_avatar(file, data.username)
+        avatar = await cloudinary_service.upload_avatar(
+            file.file, data.username, file.filename
+        )
     else:
         avatar = None
         try:
@@ -148,7 +152,9 @@ async def update_user(
     user.phone = data.phone
     user.birthday = data.birthday
     if file:
-        user.avatar = await upload_avatar(file, user.username)
+        user.avatar = await cloudinary_service.upload_avatar(
+            file.file, user.username, file.filename
+        )
     await session.commit()
     await set_user_in_cache(user, cache)
     return user
