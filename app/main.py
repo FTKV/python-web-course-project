@@ -150,7 +150,6 @@ app.include_router(
         )
     ],
 )
-
 app.include_router(
     rates.router,
     prefix=BASE_API_ROUTE,
@@ -163,6 +162,7 @@ app.include_router(
         )
     ],
 )
+
 
 @app.get(
     BASE_API_ROUTE + "/healthchecker",

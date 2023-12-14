@@ -25,6 +25,7 @@ libgravatar = "^1.0.4"
 cloudinary = "^1.37.0"
 psycopg2-binary = "^2.9.9"
 qrcode = "^7.4.2"
+nest-asyncio = "^1.5.8"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"
