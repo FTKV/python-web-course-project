@@ -31,8 +31,6 @@ from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpd
 from src.conf.config import settings
 
 
-URL = f"{settings.api_protocol}://{settings.api_host}:{settings.api_port}/api/images/"
-
 router = APIRouter(prefix="/images", tags=["images"])
 
 allowed_operations_read_update = RoleAccess(
@@ -101,8 +99,8 @@ async def get_qr_code(
     image = await repository_images.get_image_by_id(image_id, session)
     if image is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
-    url_image = f"{URL}{image.id}"
-    generate_qr_code(url_image)
+    image_url = image.url
+    generate_qr_code(image_url)
     return FileResponse(
         "static/qrcode.png",
         media_type="image/png",
@@ -210,6 +208,7 @@ async def patch_image(
     :param body: ImageModel: The data from the request body
     :param current_user: User: The user who is currently logged in
     :param session: AsyncSession: The database session
+    :param transformations: Enum: Image file transformation parameters.
     :return ImageDb: An image model object
     """
     image = await repository_images.patch_image(

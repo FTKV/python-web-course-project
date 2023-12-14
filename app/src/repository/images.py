@@ -151,6 +151,7 @@ async def patch_image(
     :param body: ImageModel: Get the fields from the request body
     :param user: User: Check if the user is allowed to update the image
     :param session: AsyncSession: Pass the current session to the function
+    :param transformations: Enum: Image file transformation parameters.
     :return: An image  or None
     """
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user.id))
