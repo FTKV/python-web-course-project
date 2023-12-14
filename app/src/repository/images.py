@@ -166,7 +166,8 @@ async def delete_image(image_id: UUID | int, session: AsyncSession) -> Image | N
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
-        await cloudinary_service.delete_image(image.url)
+        public_id = await cloudinary_service.get_public_id_from_url(image.url)
+        await cloudinary_service.delete_image(public_id)
         await session.delete(image)
         await session.commit()
     return image

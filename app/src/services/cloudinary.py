@@ -5,16 +5,15 @@ Module of Cloudinary class and methods
 
 import cloudinary
 import cloudinary.uploader
-from fastapi import HTTPException, UploadFile, File, status
 
 from src.conf.config import settings
-
-# from src.database.models import User
 
 
 class CloudinaryService:
     api_name = settings.api_name.replace(" ", "_")
     public_id = f"{api_name}/"
+    transform_avatar = "c_thumb,g_face,h_200,w_200/r_max/"
+    transform_fb_avatar = "c_fill,g_face,h_120,w_80/"
 
     def __init__(self):
         cloudinary.config(
@@ -26,11 +25,13 @@ class CloudinaryService:
 
     def gen_image_name(self, username, filename, album=None):
         """
-        Generate image name.
+        Generate public_id of cloudinary`s image.
 
-        :param name: Image name.
+        :param username: The username of the user.
         :param type: str
-        :return: Full path to the image storage location in the cloud storage.
+        :param filename: The filename of the image to upload.
+        :param type: str
+        :return: Public_id for the image storage location in the cloud storage.
         :rtype: str
         """
         public_id = (
@@ -46,6 +47,8 @@ class CloudinaryService:
 
         :param file: The uploaded file of avatar.
         :type file: BinaryIO
+        :param username: The username of the user.
+        :type username: str
         :param filename: The filename of the image to upload.
         :type filename: str
         :return: The file upload result
@@ -69,7 +72,7 @@ class CloudinaryService:
         Get image url from cloudinary json response.
 
         :param result: json response.
-        :type result: json
+        :type result: str
         :return: Url of uploaded image.
         :rtype: str
         """
@@ -80,20 +83,34 @@ class CloudinaryService:
             print(f"Error getting image URL: {e}")
             return None
 
+    async def get_public_id_from_url(self, url_image):
+        """
+        Generate public_id from url cloudinary.
+
+        :param url_image: Get cloudinary url.
+        :param type: str
+        :return: Public_id for the image storage location in the cloud storage.
+        :rtype: str
+        """
+        l_index = url_image.find(CloudinaryService.api_name)
+        r_index = url_image.rfind(".")
+        public_id = url_image[l_index:r_index]
+        return public_id
+
     async def delete_image(
         self,
-        image_url,
+        public_id,
     ):
         """
         Delete an image.
 
-        :param image_url: The image to delete
-        :type image_url: URL image
+        :param public_id: The image to delete
+        :type public_id: URL image
         :return: Result
         :rtype: str
         """
         try:
-            result = cloudinary.uploader.destroy(image_url)
+            result = cloudinary.uploader.destroy(public_id)
             print(f"Image deleted: {result}")
         except Exception as e:
             print(f"Error deleting image: {e}")
@@ -108,10 +125,11 @@ class CloudinaryService:
         Uploads an user's avatar.
 
         :param file: The uploaded file of avatar.
-        :type file: UploadFile
+        :type file: File for upload.
         :param username: The username of the user to upload avatar.
-        :type username: User
-        :type filename: The name of image file
+        :type username: str
+        :param filename: The name of the image file
+        :type filename: str
         :return: The URL of uploaded avatar.
         :rtype: str
         """
@@ -122,53 +140,20 @@ class CloudinaryService:
         )
         return avatar_url
 
-    async def edit_image_face(self, file, public_id):
-        result = cloudinary.CloudinaryImage(public_id).image(
-            transformation=[
-                {"gravity": "face", "height": 200, "width": 200, "crop": "thumb"},
-                {"radius": "max"},
-                {"fetch_format": "auto"},
-            ]
-        )
-        # Result: srt = <img src="https://res.cloudinary.com/dszct2q9m/image/upload/c_thumb,g_face,h_200,w_200/r_max/f_auto/cogaj"/>
+    async def image_transformations(self, image_url, transfomration):
+        """
+        Performs various image transformations.
+
+        :param image_url: Get the cloudinary url.
+        :param type: str
+        :param transfomration: Pass the transformation string to the image_transformations function
+        :type transfomration: str, CloudinaryService variable.
+        :return: Image url with the transformation specified
+        :rtype: str
+        """
+        r_index = image_url.rfind("upload/") + 7
+        transform_url = f"{image_url[:r_index]}{transfomration}{image_url[r_index:]}"
+        return transform_url
 
 
 cloudinary_service = CloudinaryService()
-
-
-# async def upload_avatar(
-#     file: UploadFile,
-#     username: str,
-# ):
-#     """
-#     Uploads an user's avatar.
-
-#     :param file: The uploaded file of avatar.
-#     :type file: UploadFile
-#     :param username: The username of the user to upload avatar.
-#     :type username: User
-#     :return: The URL of uploaded avatar.
-#     :rtype: str
-#     """
-#     cloudinary.config(
-#         cloud_name=settings.cloudinary_cloud_name,
-#         api_key=settings.cloudinary_api_key,
-#         api_secret=settings.cloudinary_api_secret,
-#         secure=True,
-#     )
-#     api_name = settings.api_name.replace(" ", "_")
-#     try:
-#         r = cloudinary.uploader.upload(
-#             file.file,
-#             public_id=f"{api_name}/{username}",
-#             overwrite=True,
-#         )
-#         src_url = cloudinary.CloudinaryImage(f"{api_name}/{username}").build_url(
-#             width=250, height=250, crop="fill", version=r.get("version")
-#         )
-#     except Exception as error_message:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail=f"Upload image error: {str(error_message)}",
-#         )
-#     return src_url
