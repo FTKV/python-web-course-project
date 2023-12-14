@@ -31,9 +31,13 @@ class CloudinaryService:
         :param type: str
         :param filename: The filename of the image to upload.
         :param type: str
+        :param album: Optional parametr album name.
+        :param type: str
         :return: Public_id for the image storage location in the cloud storage.
         :rtype: str
         """
+        index_extension = filename.rfind(".")
+        filename = filename[:index_extension]
         public_id = (
             CloudinaryService.public_id + f"/{username}/{album}/{filename}"
             if album
@@ -51,6 +55,8 @@ class CloudinaryService:
         :type username: str
         :param filename: The filename of the image to upload.
         :type filename: str
+        :param album: Optional parametr album name.
+        :param type: str
         :return: The file upload result
         :rtype: json
         """
@@ -61,7 +67,6 @@ class CloudinaryService:
                 public_id=public_id,
                 overwrite=True,
             )
-            print(result)
             return result
         except Exception as e:
             print(f"Error uploading image: {e}")

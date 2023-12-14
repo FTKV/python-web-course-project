@@ -2,7 +2,7 @@
 Module of images' schemas
 """
 
-
+from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated
@@ -29,8 +29,20 @@ class ImageDb(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
-    rate: float | None
+    # rate: float | None
 
 
 class ImageUrlModel(BaseModel):
     url: HttpUrl
+
+
+class CloudinaryTransformations(str, Enum):
+    crop = "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/"
+    resize = "ar_1.0,c_fill,h_250"
+    rotate = "a_10/"
+    improve = "e_improve:outdoor:29/"
+    brightness = "e_brightness:80/"
+    blackwhite = "e_blackwhite:49/"
+    saturation = "e_saturation:50/"
+    border = "bo_5px_solid_lightblue/"
+    rounded_corners = "r_100/"

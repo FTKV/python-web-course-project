@@ -2,7 +2,7 @@
 Module of images' CRUD
 """
 
-
+from enum import Enum
 import pickle
 from typing import List
 
@@ -13,7 +13,12 @@ from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Tag, User, Image, image_tag_m2m
-from src.schemas.images import ImageModel, ImageDb, ImageUrlModel
+from src.schemas.images import (
+    ImageModel,
+    ImageDb,
+    ImageUrlModel,
+    CloudinaryTransformations,
+)
 from src.conf.config import settings
 from src.services.cloudinary import cloudinary_service
 
@@ -134,10 +139,10 @@ async def update_image(
 
 async def patch_image(
     image_id: UUID,
-    transformation: str,
     body: ImageUrlModel,
     user: User,
     session: AsyncSession,
+    transformations: Enum,
 ) -> Image | None:
     """
     Updates existing image
@@ -152,11 +157,13 @@ async def patch_image(
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
-        if transformation:
-            url = await cloudinary_service.image_transformations(
-                image.url,
-                transformation,
-            )
+        if transformations:
+            for i in CloudinaryTransformations:
+                if i.value in transformations:
+                    url = await cloudinary_service.image_transformations(
+                        image.url,
+                        i.value,
+                    )
         else:
             url = body.url
         image.url = url
