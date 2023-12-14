@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Form
-from pydantic import BaseModel, Field, UUID4, ConfigDict
+from pydantic import BaseModel, HttpUrl, UUID4, ConfigDict
 
 
 class ImageModel(BaseModel):
@@ -24,7 +24,7 @@ class ImageDb(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID4 | int
-    url: str
+    url: HttpUrl
     user_id: UUID4 | int
     description: str | None
     created_at: datetime
@@ -32,6 +32,5 @@ class ImageDb(BaseModel):
     rate: float | None
 
 
-
 class ImageUrlModel(BaseModel):
-    url: str
+    url: HttpUrl
