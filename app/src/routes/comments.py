@@ -54,6 +54,34 @@ async def read_all_comments_to_photo(
         image_id, offset, limit, session
     )
 
+@router.get(
+    "/my/comments",
+    response_model=List[CommentResponse],
+    dependencies=[Depends(allowed_operation_get)],
+)
+async def read_all_my_comments(
+    current_user: User = Depends(auth_service.get_current_user),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=1000),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Returns a list of all comments made by the current user.
+
+    :param current_user: User: Get the current user from the auth_service
+    :param offset: int: Skip the first offset comments
+    :param ge: Specify a minimum value for the parameter
+    :param limit: int: Limit the number of comments returned
+    :param ge: Specify that the value must be greater than or equal to a given number
+    :param le: Limit the number of comments returned
+    :param session: AsyncSession: Create a new database session
+    :param : Get the current user
+    :return: A list of comments
+    """
+    return await repository_comments.read_all_my_comments(
+        current_user, offset, limit, session
+    )
+
 
 @router.get(
     "/{comment_id}/comments",
@@ -84,35 +112,6 @@ async def read_all_comments_to_comment(
     """
     return await repository_comments.read_all_comments_to_comment(
         comment_id, offset, limit, session
-    )
-
-
-@router.get(
-    "/my/comments",
-    response_model=List[CommentResponse],
-    dependencies=[Depends(allowed_operation_get)],
-)
-async def read_all_my_comments(
-    current_user: User = Depends(auth_service.get_current_user),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=10, ge=1, le=1000),
-    session: AsyncSession = Depends(get_session),
-):
-    """
-    Returns a list of all comments made by the current user.
-
-    :param current_user: User: Get the current user from the auth_service
-    :param offset: int: Skip the first offset comments
-    :param ge: Specify a minimum value for the parameter
-    :param limit: int: Limit the number of comments returned
-    :param ge: Specify that the value must be greater than or equal to a given number
-    :param le: Limit the number of comments returned
-    :param session: AsyncSession: Create a new database session
-    :param : Get the current user
-    :return: A list of comments
-    """
-    return await repository_comments.read_all_my_comments(
-        current_user, offset, limit, session
     )
 
 
@@ -167,7 +166,8 @@ async def read_top_comments_to_photo(
     :param le: Limit the number of comments returned
     :param session: AsyncSession: Pass the database session to the function
     :param : Get the comments of a photo
-    :return: A list of comments"""
+    :return: A list of comments
+    """
 
     return await repository_comments.read_top_comments_to_photo(
         image_id, offset, limit, session
