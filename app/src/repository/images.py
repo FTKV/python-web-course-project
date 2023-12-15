@@ -6,20 +6,22 @@ from enum import Enum
 import pickle
 from typing import List
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile, status
 from redis.asyncio.client import Redis
 from sqlalchemy import select, UUID, and_
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.conf.config import settings
 from src.database.models import Tag, User, Image, image_tag_m2m
+import src.repository.tags as repository_tags
 from src.schemas.images import (
     ImageModel,
     ImageDb,
     ImageUrlModel,
     CloudinaryTransformations,
+    MAX_NUMBER_OF_TAGS_PER_IMAGE,
 )
-from src.conf.config import settings
 from src.services.cloudinary import cloudinary_service
 
 
@@ -59,8 +61,15 @@ async def create_image(
         file.file, user.username, file.filename
     )
     image_url = await cloudinary_service.get_image_url(result)
-
-    image = Image(**body.model_dump(), url=image_url, user_id=user.id)
+    image = Image(description=body.description, url=image_url, user_id=user.id)
+    if body.tags:
+        tags = []
+        for tag_title in body.tags:
+            tag = await repository_tags.read_tag(tag_title, session)
+            if not tag:
+                tag = await repository_tags.create_tag(tag_title, user, session)
+            tags.append(tag)
+        image.tags = tags
     session.add(image)
     await session.commit()
     await session.refresh(image)
@@ -68,7 +77,7 @@ async def create_image(
     return image
 
 
-async def get_image_by_id(image_id: UUID, session: AsyncSession) -> Image | None:
+async def read_image(image_id: UUID | int, session: AsyncSession) -> Image | None:
     """
     Gets an image with the specified id.
 
@@ -84,23 +93,7 @@ async def get_image_by_id(image_id: UUID, session: AsyncSession) -> Image | None
     return image.scalar()
 
 
-async def get_my_images(user_id, session: AsyncSession) -> list | None:
-    """
-    Gets an image with the specified id.
-
-    :param image_id: The ID of the image to get.
-    :type image_id: UUID
-    :param session: The database session.
-    :type session: AsyncSession
-    :return: The image with the specified ID, or None if it does not exist.
-    :rtype: Image | None
-    """
-    stmt = select(Image).filter(user_id == user_id)
-    images = await session.execute(stmt)
-    return images.scalar()
-
-
-async def get_user_images(user_id, session: AsyncSession) -> list | None:
+async def read_images(user_id, session: AsyncSession) -> list | None:
     """
     Gets an image with the specified id.
 
@@ -117,7 +110,7 @@ async def get_user_images(user_id, session: AsyncSession) -> list | None:
 
 
 async def update_image(
-    image_id: UUID, body: ImageModel, user: User, session: AsyncSession
+    image_id: UUID, body: ImageModel, user_id: UUID, session: AsyncSession
 ) -> Image | None:
     """
     Updates existing image
@@ -128,7 +121,7 @@ async def update_image(
     :param session: AsyncSession: Pass the current session to the function
     :return: An image  or None
     """
-    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user.id))
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
@@ -140,7 +133,7 @@ async def update_image(
 async def patch_image(
     image_id: UUID,
     body: ImageUrlModel,
-    user: User,
+    user_id: UUID,
     session: AsyncSession,
     transformations: Enum,
 ) -> Image | None:
@@ -154,7 +147,7 @@ async def patch_image(
     :param transformations: Enum: Image file transformation parameters.
     :return: An image  or None
     """
-    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user.id))
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
@@ -172,7 +165,9 @@ async def patch_image(
     return image
 
 
-async def delete_image(image_id: UUID | int, session: AsyncSession) -> Image | None:
+async def delete_image(
+    image_id: UUID | int, user_id: UUID, session: AsyncSession
+) -> Image | None:
     """
     Deletes an image from the database.
 
@@ -181,7 +176,7 @@ async def delete_image(image_id: UUID | int, session: AsyncSession) -> Image | N
     :param session: AsyncSession: Pass the session to the function
     :return: The Image object that was deleted
     """
-    stmt = select(Image).filter(Image.id == image_id)
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
@@ -189,4 +184,49 @@ async def delete_image(image_id: UUID | int, session: AsyncSession) -> Image | N
         await cloudinary_service.delete_image(public_id)
         await session.delete(image)
         await session.commit()
+    return image
+
+
+async def add_tag_to_image(
+    image_id: UUID | int,
+    tag_title: str,
+    user_id: UUID | int,
+    user: User,
+    session: AsyncSession,
+) -> Image | None:
+    tag = await repository_tags.read_tag(tag_title, session)
+    if not tag:
+        tag = await repository_tags.create_tag(tag_title, user, session)
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
+    image = await session.execute(stmt)
+    image = image.scalar()
+    if image:
+        if len(image.tags) == MAX_NUMBER_OF_TAGS_PER_IMAGE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Can't exceeded the maximum number ({MAX_NUMBER_OF_TAGS_PER_IMAGE}) of tags per image",
+            )
+        if tag not in image.tags:
+            image.tags.append(tag)
+            await session.commit()
+    return image
+
+
+async def delete_tag_from_image(
+    image_id: UUID | int,
+    tag_title: str,
+    user_id: UUID | int,
+    user: User,
+    session: AsyncSession,
+) -> Image | None:
+    tag = await repository_tags.read_tag(tag_title, session)
+    if not tag:
+        tag = await repository_tags.create_tag(tag_title, user, session)
+    stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
+    image = await session.execute(stmt)
+    image = image.scalar()
+    if image:
+        if image.tags and tag in image.tags:
+            image.tags.remove(tag)
+            await session.commit()
     return image
