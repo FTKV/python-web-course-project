@@ -129,7 +129,7 @@ async def get_qr_code(
     :return: The FileResponse.
     :rtype FileResponse: Reply with a file in image/png format.
     """
-    image = await repository_images.get_image_by_id(image_id, session)
+    image = await repository_images.read_image(image_id, session)
     if image is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
     image_url = image.url
