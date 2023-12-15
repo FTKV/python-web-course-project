@@ -197,14 +197,14 @@ async def read_user_images(
 )
 async def update_image(
     image_id: UUID4 | int,
-    user: User = Depends(auth_service.get_current_user),
-    session: AsyncSession = Depends(get_session),
-    cache: Redis = Depends(get_redis_db1),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
         description="List of Cloudinary image transformations",
         example=["crop", "resize"],
     ),
+    user: User = Depends(auth_service.get_current_user),
+    session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
     Handles a PUT operation for the images subroute '/{image_id}'.
@@ -225,10 +225,10 @@ async def update_image(
     """
     image = await repository_images.update_image(
         image_id,
+        transformations,
         user.id,
         session,
         cache,
-        transformations,
     )
     if image is None:
         raise HTTPException(
@@ -273,9 +273,10 @@ async def update_user_image(
     """
     image = await repository_images.update_image(
         image_id,
+        transformations,
         user_id,
         session,
-        transformations,
+        cache,
     )
     if image is None:
         raise HTTPException(
