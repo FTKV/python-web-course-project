@@ -156,7 +156,7 @@ async def read_images(
     session: AsyncSession = Depends(get_session),
 ) -> ScalarResult:
     """
-    Handles a GET-operation to "" images subroute and gets images of current user.
+    Handles a GET-operation to images route and gets images of current user.
 
     :param user: The current user.
     :type user: User
@@ -169,13 +169,13 @@ async def read_images(
 
 @router.get(
     "/{user_id}/images",
-    response_model=ImageDb,
+    response_model=List[ImageDb],
     dependencies=[Depends(allowed_operations_for_self)],
 )
 async def read_user_images(
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
-) -> List:
+) -> ScalarResult:
     """
     Handles a GET-operation to images subroute '/{user_id}/images'.
         Gets of the user's images
