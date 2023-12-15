@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import settings
 from src.database.models import User, Image
-import src.repository.tags as repository_tagsimages
+import src.repository.tags as repository_tags
 from src.schemas.images import (
     ImageModel,
     ImageDescriptionModel,
@@ -66,9 +66,9 @@ async def create_image(
     if body.tags:
         tags = []
         for tag_title in body.tags:
-            tag = await repository_tagsimages.read_tag(tag_title, session)
+            tag = await repository_tags.read_tag(tag_title, session)
             if not tag:
-                tag = await repository_tagsimages.create_tag(tag_title, user, session)
+                tag = await repository_tags.create_tag(tag_title, user, session)
             tags.append(tag)
         image.tags = tags
     session.add(image)
