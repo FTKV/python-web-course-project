@@ -145,19 +145,19 @@ class CloudinaryService:
         )
         return avatar_url
 
-    async def image_transformations(self, image_url, transfomration):
+    async def image_transformations(self, image_url, transformation):
         """
         Performs various image transformations.
 
         :param image_url: Get the cloudinary url.
         :param type: str
-        :param transfomration: Pass the transformation string to the image_transformations function
-        :type transfomration: str, CloudinaryService variable.
+        :param transformation: Pass the transformation string to the image_transformations function
+        :type transformation: str, CloudinaryService variable.
         :return: Image url with the transformation specified
         :rtype: str
         """
         r_index = image_url.rfind("upload/") + 7
-        transform_url = f"{image_url[:r_index]}{transfomration}{image_url[r_index:]}"
+        transform_url = f"{image_url[:r_index]}{transformation}{image_url[r_index:]}"
         return transform_url
 
 
