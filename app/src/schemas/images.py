@@ -45,10 +45,6 @@ class ImageDb(BaseModel):
     tags: List[TagResponse]
 
 
-class ImageUrlModel(BaseModel):
-    url: HttpUrl
-
-
 class ImageDescriptionModel(BaseModel):
     description: str | None
 
