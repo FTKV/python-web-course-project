@@ -133,19 +133,6 @@ class Image(Base):
     )
     rates: Mapped[List["Rate"]] = relationship("Rate", back_populates="image")
 
-    @hybrid_property
-    def rate(self):
-        async def rate_async(self):
-            session = async_object_session(self)
-            stmt = select(func.avg(Rate.rate)).where(Rate.image_id == self.id)
-            rate = await session.execute(stmt)
-            return rate.scalar()
-
-        loop = asyncio.get_running_loop()
-        nest_asyncio.apply(loop)
-        rate = loop.run_until_complete(rate_async(self))
-        return rate
-
 
 class Comment(Base):
     __tablename__ = "comments"
