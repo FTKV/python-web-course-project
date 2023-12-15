@@ -5,19 +5,45 @@ Module of images' schemas
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, List, Optional
 
-from fastapi import Form
-from pydantic import BaseModel, HttpUrl, UUID4, ConfigDict
+from fastapi import Form, Query
+from pydantic import (
+    BaseModel,
+    HttpUrl,
+    UUID4,
+    ConfigDict,
+    Field,
+    conlist,
+    StringConstraints,
+    constr,
+)
+
+# from pydantic.dataclasses import dataclass
+
+from src.schemas.tags import TagResponse
 
 
 class ImageModel(BaseModel):
     description: str | None
+    tags: conlist(
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=2,
+                max_length=49,
+                strip_whitespace=True,
+                pattern=r"^[a-zA-Z0-9_.-]+$",
+            ),
+        ],
+        max_length=5,
+    ) | None
 
 
 @dataclass
 class ImageCreateForm:
     description: Annotated[str | None, Form(...)] = None
+    tags: Annotated[List[str] | None, Form(...)] = None
 
 
 class ImageDb(BaseModel):
@@ -29,7 +55,7 @@ class ImageDb(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
-    # rate: float | None
+    tags: List[TagResponse]
 
 
 class ImageUrlModel(BaseModel):
