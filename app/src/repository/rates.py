@@ -10,7 +10,7 @@ from typing import List
 
 from src.database.models import Rate, User, Image
 from src.schemas.rates import RateModel, RateImageResponse
-import src.repository.images as repository_images
+from src.repository.images import read_image
 
 async def read_all_rates_to_photo(
     image_id: UUID4 | int,
@@ -82,7 +82,7 @@ async def read_avg_rate_to_photo(
     """
     stmt = select(func.avg(Rate.rate)).where(Rate.image_id == image_id)
     avg_rate = await session.execute(stmt)
-    image = await repository_images.get_image_by_id(image_id, session)
+    image = await read_image(image_id, session)
     return RateImageResponse(image = image, avg_rate=avg_rate.scalar())
 
 async def read_all_avg_rates(
