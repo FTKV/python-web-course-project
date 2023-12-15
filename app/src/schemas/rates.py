@@ -3,7 +3,7 @@ Module of rates' schemas
 """
 
 from datetime import datetime
-from pydantic import BaseModel, Field, UUID4, ConfigDict, validator, field_validator    
+from pydantic import BaseModel, Field, UUID4, ConfigDict, field_validator    
 
 from src.schemas.images import ImageDb
 
