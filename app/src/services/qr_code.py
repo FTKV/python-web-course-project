@@ -28,12 +28,4 @@ def generate_qr_code(image_url: str) -> BytesIO:
 
     # Make QR-code object
     qr_code = qr.make_image(fill_color="black", back_color="white")
-
     qr_code.save("static/qrcode.png")
-
-    # # Save QR-code to byte object
-    # qr_code_bytes = BytesIO()
-    # qr_code.save(qr_code_bytes)
-    # qr_code_bytes.seek(0)
-
-    # return qr_code_bytes

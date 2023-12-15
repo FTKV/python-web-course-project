@@ -4,7 +4,6 @@ Module of images' routes
 
 
 from dataclasses import asdict
-import pathlib
 from typing import List
 
 from pydantic import UUID4
@@ -28,7 +27,8 @@ from src.schemas.images import (
     ImageDescriptionModel,
     CloudinaryTransformations,
 )
-from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpdateForm
+
+
 from src.conf.config import settings
 
 
@@ -53,18 +53,20 @@ async def create_image(
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    Handles a POST-operation to images route and create image.
+    Handles a POST-operation to "" images subroute and create an image.
 
-    :param data: The data for the image to create.
-    :type data: ImageCreateForm
     :param file: The uploaded file to create avatar from.
     :type file: UploadFile
+    :param data: The data for the image to create.
+    :type data: ImageCreateForm
+    :param user: The user who creates the image.
+    :type user: User
     :param session: Get the database session
     :type AsyncSession: The current session.
     :param cache: The Redis client.
     :type cache: Redis
-    :return: The FileResponse.
-    :rtype FileResponse: Reply with a file in image/png format.
+    :return: Newly created image of the current user.
+    :rtype: Image
     """
     try:
         if data.tags:
@@ -90,18 +92,19 @@ async def create_image(
 async def read_image(
     image_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
-    Handles a GET-operation to '/api/images/get_qr_code/{image_id}' images subroute and gets FileResponse.
+    Handles a GET-operation to '/{image_id}' images subroute and gets the image with id.
 
-    :param image_id: UUID of the image.
-    :type image_id: str
+    :param image_id: The image id.
+    :type image_id: UUID | int
     :param session: Get the database session
     :type AsyncSession: The current session.
-    :return: The FileResponse.
-    :rtype FileResponse: Reply with a file in image/png format.
+    :return: The image with id.
+    :rtype: Image
     """
-    image = await repository_images.read_image(image_id, session)
+    image = await repository_images.read_image(image_id, session, cache)
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Image not Found"
@@ -117,18 +120,19 @@ async def read_image(
 async def get_qr_code(
     image_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
-    Handles a GET-operation to '/api/images/get_qr_code/{image_id}' images subroute and gets FileResponse.
+    Handles a GET-operation to '/{image_id}/qr_code' images subroute and gets FileResponse.
 
-    :param image_id: UUID of the image.
-    :type image_id: str
+    :param image_id: The Id of the image.
+    :type image_id: UUID4 | int
     :param session: Get the database session
     :type AsyncSession: The current session.
-    :return: The FileResponse.
-    :rtype FileResponse: Reply with a file in image/png format.
+    :return: Reply with a file in image/png format.
+    :rtype: FileResponse
     """
-    image = await repository_images.get_image_by_id(image_id, session)
+    image = await repository_images.read_image(image_id, session, cache)
     if image is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
     image_url = image.url
@@ -151,12 +155,12 @@ async def read_images(
     session: AsyncSession = Depends(get_session),
 ) -> List:
     """
-    Handles a GET-operation to images route and gets images of current user.
+    Handles a GET-operation to "" images subroute and gets images of current user.
 
     :param user: The current user.
     :type user: User
-    :return: Images of the current user.
-    :rtype: Images
+    :return: List of images of the current user.
+    :rtype: List
     """
     images = await repository_images.read_images(user.id, session)
     return images
@@ -172,12 +176,15 @@ async def read_user_images(
     session: AsyncSession = Depends(get_session),
 ) -> List:
     """
-    Handles a GET-operation to '/{username}' users subroute and gets the current user.
+    Handles a GET-operation to images subroute '/{user_id}/images'.
+        Gets of the user's images
 
-    :param user: The current user.
-    :type user: User
-    :return: The current user.
-    :rtype: User
+    :param user_id: The Id of the current user.
+    :type user_id: UUID | int
+    :param session: Get the database session
+    :type AsyncSession: The current session.
+    :return: List of the user's images.
+    :rtype: List
     """
     images = await repository_images.read_images(user_id, session)
     return images
@@ -193,6 +200,7 @@ async def update_image(
     body: ImageUrlModel,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
         description="List of Cloudinary image transformations",
@@ -200,22 +208,30 @@ async def update_image(
     ),
 ):
     """
-    The update_image function patch an image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a PUT operation for the images subroute '/{image_id}'.
+        Updates the current user's image.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :param image_id: The Id of the image.
+    :type image_id: UUID4 | int
+    :param body: The data for the image to update.
+    :type body: ImageModel
+    :param user: The current user who updated image.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :param transformations: The Enum list of the image file transformation parameters.
+    :type transformations: List
+    :return: The updated image object.
+    :rtype: Image
     """
     image = await repository_images.update_image(
         image_id,
         body,
         user.id,
         session,
+        cache,
         transformations,
     )
     if image is None:
@@ -236,6 +252,7 @@ async def update_user_image(
     body: ImageUrlModel,
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
         description="List of Cloudinary image transformations",
@@ -243,16 +260,23 @@ async def update_user_image(
     ),
 ):
     """
-    The update_image function patch an image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a PUT operation for the images subroute '/{user_id}/images/{image_id}'.
+        Updates the user's image.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :param image_id: The Id of the image.
+    :type image_id: UUID4 | int
+    :param body: The data for the image to update.
+    :type body: ImageUrlModel
+    :param user_id: The Id of the user.
+    :type user_id: UUID4 | int
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :param transformations: The Enum list of the image file transformation parameters.
+    :type transformations: List
+    :return: The updated image object.
+    :rtype: Image
     """
     image = await repository_images.update_image(
         image_id,
@@ -279,19 +303,34 @@ async def patch_image(
     body: ImageDescriptionModel,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
-    The update_image function updates a image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a PATCH operation for the images subroute '/{image_id}'.
+        Patches the current user's image.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :return ImageDb: A ImageDb object
+    :param image_id: The Id of the image to patch.
+    :type image_id: UUID4 | int
+    :param body: The data for the image to patch.
+    :type body: ImageDescriptionModel
+    :param user: The current user.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :param transformations: The Enum list of the image file transformation parameters.
+    :type transformations: List
+    :return: The updated image.
+    :rtype: Image
     """
-    image = await repository_images.patch_image(image_id, body, user.id, session)
+    image = await repository_images.patch_image(
+        image_id,
+        body,
+        user.id,
+        session,
+        cache,
+    )
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -310,19 +349,32 @@ async def patch_user_image(
     body: ImageDescriptionModel,
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
-    The update_image function updates a image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a PATCH operation for the images subroute '/{user_id}/images/{image_id}'.
+        Patches the image of the user.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :return ImageDb: A ImageDb object
+    :param image_id: The Id of the image.
+    :type image_id: UUID4 | int
+    :param body: The data for the image to update.
+    :type body: ImageDescriptionModel
+    :param user_id: The Id of the user.
+    :type user_id: UUID4 | int
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :return: The patched image.
+    :rtype: Image
     """
-    image = await repository_images.patch_image(image_id, body, user_id, session)
+    image = await repository_images.patch_image(
+        image_id,
+        body,
+        user_id,
+        session,
+        cache,
+    )
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -342,12 +394,17 @@ async def delete_image(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Deletes an image from the database.
+    Handles a DELETE operation for the images subroute '/{image_id}'.
+        Deleted the current user's image.
 
-    :param image_id: UUID4 | int: Specify the id of the image to be deleted
-    :param current_user: User: Get the current user from the auth_service
-    :param session: AsyncSession: Pass the database session to the repository layer
-    :return: None, so the response will be empty
+    :param image_id: The Id of the image to delete.
+    :type image_id: UUID4 | int
+    :param user: The current user.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :return: None
+    :type: None
     """
     image = await repository_images.delete_image(image_id, user.id, session)
     if image is None:
@@ -368,12 +425,17 @@ async def delete_user_image(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Deletes an image from the database.
+    Handles a DELETE operation for the images subroute '/{user_id}/images/{image_id}'.
+        Delete the image of the user.
 
-    :param image_id: UUID4 | int: Specify the id of the image to be deleted
-    :param current_user: User: Get the current user from the auth_service
-    :param session: AsyncSession: Pass the database session to the repository layer
-    :return: None, so the response will be empty
+    :param image_id: The Id of the image to delete.
+    :type image_id: UUID4 | int
+    :param user_id: The Id of the user.
+    :type user_id: UUID4 | int
+    :param session: The database session.
+    :type session: AsyncSession
+    :return: None
+    :type: None
     """
     image = await repository_images.delete_image(image_id, user_id, session)
     if image is None:
@@ -396,16 +458,19 @@ async def add_tag_to_image(
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    The update_image function patch an image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a PATCH operation for the images subroute '/{image_id}/tags/{tag_title}'.
+        Patches the tags of the current user's image.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :param image_id: The Id of the image to patch.
+    :type image_id: UUID4 | int
+    :param tag_title: The tag title for the image.
+    :type tag_title: str
+    :param user: The current user.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :return: Patched image object.
+    :type: Image
     """
     image = await repository_images.add_tag_to_image(
         image_id,
@@ -437,16 +502,21 @@ async def add_tag_to_user_image(
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    The update_image function patch an image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a PATCH operation for the images subroute '/{user_id}/images{image_id}/tags/{tag_title}'.
+        Patches the current user's image tag.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :param image_id: The Id of the image to patch the tag.
+    :type image_id: UUID4 | int
+    :param user_id: The Id of the user.
+    :type user_id: UUID4 | int
+    :param user: The current user.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :return: An image object.
+    :rtype: Image
     """
     image = await repository_images.add_tag_to_image(
         image_id,
@@ -477,16 +547,21 @@ async def delete_tag_from_image(
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    The update_image function patch an image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a DELETE operation for the images subroute '/{image_id}/tags/{tag_title}'.
+        Delited the current user's image tag.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :param image_id: The Id of the image to delete.
+    :type image_id: UUID4 | int
+    :param tag_title: The tag title for the image.
+    :type tag_title: str
+    :param user: The current user.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :return: An image object.
+    :rtype: Image
     """
     image = await repository_images.delete_tag_from_image(
         image_id,
@@ -518,16 +593,23 @@ async def delete_tag_from_user_image(
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    The update_image function patch an image in the database.
-        The function takes an image_id, and a body of type ImageModel.
-        It returns the updated image.
+    Handles a DELETE operation for the images subroute '/{user_id}/images{image_id}/tags/{tag_title}'.
+        Deleted the current user's image tag.
 
-    :param image_id: UUID4 | int: The image id from the database
-    :param body: ImageModel: The data from the request body
-    :param current_user: User: The user who is currently logged in
-    :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :param image_id: The Id of the image to delete the tag.
+    :type image_id: UUID4 | int
+    :param tag_title: The tag title for the image.
+    :type tag_title: str
+    :param user_id: The Id of the user.
+    :type user_id: UUID4 | int
+    :param user: The current user.
+    :type user: User
+    :param session: The database session.
+    :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
+    :return: An image object.
+    :rtype: Image
     """
     image = await repository_images.delete_tag_from_image(
         image_id,
