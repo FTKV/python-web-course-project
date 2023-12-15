@@ -2,48 +2,35 @@
 Module of images' schemas
 """
 
+
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
-from fastapi import Form, Query
+from fastapi import Form
 from pydantic import (
     BaseModel,
     HttpUrl,
     UUID4,
     ConfigDict,
-    Field,
     conlist,
-    StringConstraints,
-    constr,
 )
+from src.schemas.tags import TagTitleType, TagResponse
 
-# from pydantic.dataclasses import dataclass
 
-from src.schemas.tags import TagResponse
+MAX_NUMBER_OF_TAGS_PER_IMAGE = 5
 
 
 class ImageModel(BaseModel):
     description: str | None
-    tags: conlist(
-        Annotated[
-            str,
-            StringConstraints(
-                min_length=2,
-                max_length=49,
-                strip_whitespace=True,
-                pattern=r"^[a-zA-Z0-9_.-]+$",
-            ),
-        ],
-        max_length=5,
-    ) | None
+    tags: conlist(TagTitleType, max_length=MAX_NUMBER_OF_TAGS_PER_IMAGE) | None
 
 
 @dataclass
 class ImageCreateForm:
     description: Annotated[str | None, Form(...)] = None
-    tags: Annotated[List[str] | None, Form(...)] = None
+    tags: Annotated[List[str | None], Form(...)] = None
 
 
 class ImageDb(BaseModel):

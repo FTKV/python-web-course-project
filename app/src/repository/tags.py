@@ -2,12 +2,13 @@
 Module of tags' CRUD
 """
 
-
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Tag, User
+from src.schemas.tags import TagModel
 
 
 async def read_tags(
@@ -67,7 +68,14 @@ async def create_tag(tag_title: str, user: User, session: AsyncSession) -> Tag |
     :return: The newly created tag or None if creation failed.
     :rtype: Tag | None
     """
-    tag = Tag(title=tag_title.lower(), user_id=user.id)
+    try:
+        tag_model = TagModel(title=tag_title)
+    except Exception as error_message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error_message),
+        )
+    tag = Tag(title=tag_model.title.lower(), user_id=user.id)
     session.add(tag)
     await session.commit()
     await session.refresh(tag)
@@ -85,7 +93,14 @@ async def delete_tag(tag_title: str, session: AsyncSession) -> Tag | None:
     :return: The deleted tag or None if it did not exist.
     :rtype: Tag | None
     """
-    stmt = select(Tag).filter(Tag.title == tag_title.lower())
+    try:
+        tag_model = TagModel(title=tag_title)
+    except Exception as error_message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error_message),
+        )
+    stmt = select(Tag).filter(Tag.title == tag_model.title.lower())
     tag = await session.execute(stmt)
     tag = tag.scalar()
     if tag:

@@ -193,7 +193,7 @@ class Tag(Base):
             UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
         )
     )
-    title: Mapped[str] = mapped_column(String(25), nullable=False, unique=True)
+    title: Mapped[str] = mapped_column(String(49), nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
