@@ -4,11 +4,12 @@ Module of images' routes
 
 
 from dataclasses import asdict
+import pathlib
 from typing import List
 
 from pydantic import UUID4
 from typing import Annotated
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query
 from fastapi.responses import FileResponse
 from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,12 +20,16 @@ from src.repository import images as repository_images
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 from src.services.qr_code import generate_qr_code
-from src.schemas.images import ImageModel, ImageCreateForm, ImageDb, ImageUrlModel
+from src.schemas.images import (
+    ImageModel,
+    ImageCreateForm,
+    ImageDb,
+    ImageUrlModel,
+    CloudinaryTransformations,
+)
 from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpdateForm
 from src.conf.config import settings
 
-
-URL = f"{settings.api_protocol}://{settings.api_host}:{settings.api_port}/api/images/"
 
 router = APIRouter(prefix="/images", tags=["images"])
 
@@ -73,7 +78,7 @@ async def create_image(
 
 
 @router.get(
-    "/{image_id}/get_qr_code",
+    "/get_qr_code/{image_id}",
     response_class=FileResponse,
     dependencies=[Depends(allowed_operations_read_update)],
 )
@@ -82,7 +87,7 @@ async def get_qr_code(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Handles a GET-operation to '/api/images/{image_id}/get_qr_code' images subroute and gets FileResponse.
+    Handles a GET-operation to '/api/images/get_qr_code/{image_id}' images subroute and gets FileResponse.
 
     :param image_id: UUID of the image.
     :type image_id: str
@@ -94,10 +99,10 @@ async def get_qr_code(
     image = await repository_images.get_image_by_id(image_id, session)
     if image is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
-    url_image = URL + "{image_id}"
-    qr_code_bytes = generate_qr_code(url_image)
+    image_url = image.url
+    generate_qr_code(image_url)
     return FileResponse(
-        qr_code_bytes,
+        "static/qrcode.png",
         media_type="image/png",
         filename="qrcode.png",
         status_code=200,
@@ -126,7 +131,7 @@ async def get_my_images(
 
 
 @router.get(
-    "/{user_id}",
+    "/user_images/{user_id}",
     response_model=ImageDb,
     dependencies=[Depends(allowed_operations_read_update)],
 )
@@ -148,7 +153,7 @@ async def get_user_images(
 
 
 @router.patch(
-    "/{image_id}",
+    "/update_image/{image_id}",
     response_model=ImageDb,
     dependencies=[Depends(allowed_operations_read_update)],
 )
@@ -179,7 +184,7 @@ async def update_image(
 
 
 @router.put(
-    "/{image_id}",
+    "/patch_image/{image_id}",
     response_model=ImageDb,
     dependencies=[Depends(allowed_operations_read_update)],
 )
@@ -188,6 +193,11 @@ async def patch_image(
     body: ImageUrlModel,
     current_user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    transformations: List[CloudinaryTransformations] = Query(
+        ...,
+        description="List of Cloudinary image transformations",
+        example=["crop", "resize"],
+    ),
 ):
     """
     The update_image function patch a image in the database.
@@ -198,9 +208,16 @@ async def patch_image(
     :param body: ImageModel: The data from the request body
     :param current_user: User: The user who is currently logged in
     :param session: AsyncSession: The database session
-    :return ImageDb: A image model object
+    :param transformations: Enum: Image file transformation parameters.
+    :return ImageDb: An image model object
     """
-    image = await repository_images.patch_image(image_id, body, current_user, session)
+    image = await repository_images.patch_image(
+        image_id,
+        body,
+        current_user,
+        session,
+        transformations,
+    )
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -210,7 +227,7 @@ async def patch_image(
 
 
 @router.delete(
-    "/{image_id}",
+    "/delete_image/{image_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[
         Depends(allowed_operation_remove),

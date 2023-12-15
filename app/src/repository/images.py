@@ -2,7 +2,7 @@
 Module of images' CRUD
 """
 
-
+from enum import Enum
 import pickle
 from typing import List
 
@@ -13,7 +13,12 @@ from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Tag, User, Image, image_tag_m2m
-from src.schemas.images import ImageModel, ImageDb, ImageUrlModel
+from src.schemas.images import (
+    ImageModel,
+    ImageDb,
+    ImageUrlModel,
+    CloudinaryTransformations,
+)
 from src.conf.config import settings
 from src.services.cloudinary import cloudinary_service
 
@@ -133,7 +138,11 @@ async def update_image(
 
 
 async def patch_image(
-    image_id: UUID, body: ImageUrlModel, user: User, session: AsyncSession
+    image_id: UUID,
+    body: ImageUrlModel,
+    user: User,
+    session: AsyncSession,
+    transformations: Enum,
 ) -> Image | None:
     """
     Updates existing image
@@ -142,13 +151,23 @@ async def patch_image(
     :param body: ImageModel: Get the fields from the request body
     :param user: User: Check if the user is allowed to update the image
     :param session: AsyncSession: Pass the current session to the function
+    :param transformations: Enum: Image file transformation parameters.
     :return: An image  or None
     """
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user.id))
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
-        image.url = body.url
+        if transformations:
+            for i in CloudinaryTransformations:
+                if i.value in transformations:
+                    url = await cloudinary_service.image_transformations(
+                        image.url,
+                        i.value,
+                    )
+        else:
+            url = body.url
+        image.url = url
         await session.commit()
     return image
 
