@@ -129,7 +129,7 @@ class Image(Base):
     user: Mapped["User"] = relationship("User", back_populates="images")
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="image")
     tags: Mapped[List["Tag"]] = relationship(
-        secondary=image_tag_m2m, back_populates="images"
+        secondary=image_tag_m2m, back_populates="images", lazy="subquery"
     )
     rates: Mapped[List["Rate"]] = relationship("Rate", back_populates="image")
 
@@ -223,7 +223,7 @@ class Tag(Base):
     )
     user: Mapped["User"] = relationship("User", back_populates="tags")
     images: Mapped[List["Image"]] = relationship(
-        secondary=image_tag_m2m, back_populates="tags"
+        secondary=image_tag_m2m, back_populates="tags", lazy="subquery"
     )
 
     def __str__(self):
