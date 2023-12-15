@@ -198,7 +198,6 @@ async def read_user_images(
 )
 async def update_image(
     image_id: UUID4 | int,
-    body: ImageUrlModel,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
