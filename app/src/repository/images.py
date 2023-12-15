@@ -90,7 +90,7 @@ async def read_images(user_id, session: AsyncSession) -> list | None:
     """
     stmt = select(Image).filter(user_id == user_id)
     images = await session.execute(stmt)
-    return images.scalar()
+    return images.scalars()
 
 
 async def read_image(image_id: UUID | int, session: AsyncSession) -> Image | None:
