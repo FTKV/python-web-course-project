@@ -8,7 +8,6 @@ from datetime import datetime, date
 import enum
 from typing import List
 
-import nest_asyncio
 from sqlalchemy import (
     UUID,
     ForeignKey,
