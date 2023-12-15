@@ -25,6 +25,7 @@ from src.schemas.images import (
     ImageCreateForm,
     ImageDb,
     ImageUrlModel,
+    ImageDescriptionModel,
     CloudinaryTransformations,
 )
 from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpdateForm
@@ -189,12 +190,17 @@ async def read_user_images(
 )
 async def update_image(
     image_id: UUID4 | int,
-    body: ImageModel,
+    body: ImageUrlModel,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    transformations: List[CloudinaryTransformations] = Query(
+        ...,
+        description="List of Cloudinary image transformations",
+        example=["crop", "resize"],
+    ),
 ):
     """
-    The update_image function updates a image in the database.
+    The update_image function patch an image in the database.
         The function takes an image_id, and a body of type ImageModel.
         It returns the updated image.
 
@@ -202,9 +208,16 @@ async def update_image(
     :param body: ImageModel: The data from the request body
     :param current_user: User: The user who is currently logged in
     :param session: AsyncSession: The database session
-    :return ImageDb: A ImageDb object
+    :param transformations: Enum: Image file transformation parameters.
+    :return ImageDb: An image model object
     """
-    image = await repository_images.update_image(image_id, body, user.id, session)
+    image = await repository_images.update_image(
+        image_id,
+        body,
+        user.id,
+        session,
+        transformations,
+    )
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -220,12 +233,17 @@ async def update_image(
 )
 async def update_user_image(
     image_id: UUID4 | int,
-    body: ImageModel,
+    body: ImageUrlModel,
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
+    transformations: List[CloudinaryTransformations] = Query(
+        ...,
+        description="List of Cloudinary image transformations",
+        example=["crop", "resize"],
+    ),
 ):
     """
-    The update_image function updates a image in the database.
+    The update_image function patch an image in the database.
         The function takes an image_id, and a body of type ImageModel.
         It returns the updated image.
 
@@ -233,9 +251,16 @@ async def update_user_image(
     :param body: ImageModel: The data from the request body
     :param current_user: User: The user who is currently logged in
     :param session: AsyncSession: The database session
-    :return ImageDb: A ImageDb object
+    :param transformations: Enum: Image file transformation parameters.
+    :return ImageDb: An image model object
     """
-    image = await repository_images.update_image(image_id, body, user_id, session)
+    image = await repository_images.update_image(
+        image_id,
+        body,
+        user_id,
+        session,
+        transformations,
+    )
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -251,17 +276,12 @@ async def update_user_image(
 )
 async def patch_image(
     image_id: UUID4 | int,
-    body: ImageUrlModel,
+    body: ImageDescriptionModel,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
-    transformations: List[CloudinaryTransformations] = Query(
-        ...,
-        description="List of Cloudinary image transformations",
-        example=["crop", "resize"],
-    ),
 ):
     """
-    The update_image function patch an image in the database.
+    The update_image function updates a image in the database.
         The function takes an image_id, and a body of type ImageModel.
         It returns the updated image.
 
@@ -269,16 +289,9 @@ async def patch_image(
     :param body: ImageModel: The data from the request body
     :param current_user: User: The user who is currently logged in
     :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :return ImageDb: A ImageDb object
     """
-    image = await repository_images.patch_image(
-        image_id,
-        body,
-        user.id,
-        session,
-        transformations,
-    )
+    image = await repository_images.patch_image(image_id, body, user.id, session)
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -294,17 +307,12 @@ async def patch_image(
 )
 async def patch_user_image(
     image_id: UUID4 | int,
-    body: ImageUrlModel,
+    body: ImageDescriptionModel,
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
-    transformations: List[CloudinaryTransformations] = Query(
-        ...,
-        description="List of Cloudinary image transformations",
-        example=["crop", "resize"],
-    ),
 ):
     """
-    The update_image function patch an image in the database.
+    The update_image function updates a image in the database.
         The function takes an image_id, and a body of type ImageModel.
         It returns the updated image.
 
@@ -312,16 +320,9 @@ async def patch_user_image(
     :param body: ImageModel: The data from the request body
     :param current_user: User: The user who is currently logged in
     :param session: AsyncSession: The database session
-    :param transformations: Enum: Image file transformation parameters.
-    :return ImageDb: An image model object
+    :return ImageDb: A ImageDb object
     """
-    image = await repository_images.patch_image(
-        image_id,
-        body,
-        user_id,
-        session,
-        transformations,
-    )
+    image = await repository_images.patch_image(image_id, body, user_id, session)
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -392,6 +393,7 @@ async def add_tag_to_image(
     tag_title: str,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
     The update_image function patch an image in the database.
@@ -411,6 +413,7 @@ async def add_tag_to_image(
         user.id,
         user,
         session,
+        cache,
     )
     if image is None:
         raise HTTPException(
@@ -431,6 +434,7 @@ async def add_tag_to_user_image(
     user_id: UUID4 | int,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
     The update_image function patch an image in the database.
@@ -450,6 +454,7 @@ async def add_tag_to_user_image(
         user_id,
         user,
         session,
+        cache,
     )
     if image is None:
         raise HTTPException(
@@ -469,6 +474,7 @@ async def delete_tag_from_image(
     tag_title: str,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
     The update_image function patch an image in the database.
@@ -488,6 +494,7 @@ async def delete_tag_from_image(
         user.id,
         user,
         session,
+        cache,
     )
     if image is None:
         raise HTTPException(
@@ -508,6 +515,7 @@ async def delete_tag_from_user_image(
     user_id: UUID4 | int,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
     The update_image function patch an image in the database.
@@ -527,6 +535,7 @@ async def delete_tag_from_user_image(
         user_id,
         user,
         session,
+        cache,
     )
     if image is None:
         raise HTTPException(

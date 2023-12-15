@@ -49,6 +49,10 @@ class ImageUrlModel(BaseModel):
     url: HttpUrl
 
 
+class ImageDescriptionModel(BaseModel):
+    description: str | None
+
+
 class CloudinaryTransformations(str, Enum):
     crop = "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/"
     resize = "ar_1.0,c_fill,h_250"

@@ -15,8 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.conf.config import settings
 from src.database.models import Role, User
 from src.schemas.users import UserModel, UserUpdateModel
-
-# from src.services.cloudinary import upload_avatar
 from src.services.cloudinary import cloudinary_service
 
 
