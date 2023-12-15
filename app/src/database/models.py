@@ -3,12 +3,10 @@ Module with declaring of SQLAlchemy models
 """
 
 
-import asyncio
 from datetime import datetime, date
 import enum
 from typing import List
 
-import nest_asyncio
 from sqlalchemy import (
     UUID,
     ForeignKey,
@@ -21,12 +19,10 @@ from sqlalchemy import (
     CheckConstraint,
     Table,
     Column,
-    select,
     func,
     text,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.asyncio import async_object_session
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 
 from src.conf.config import settings

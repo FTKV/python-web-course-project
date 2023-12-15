@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.connect_db import get_session
 from src.database.models import User, Role
 from src.repository import tags as repository_tags
-from src.schemas.tags import TagModel, TagResponse
+from src.schemas.tags import TagResponse
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 

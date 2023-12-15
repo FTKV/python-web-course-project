@@ -11,6 +11,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query
 from fastapi.responses import FileResponse
 from redis.asyncio.client import Redis
+from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connect_db import get_session, get_redis_db1
@@ -147,20 +148,20 @@ async def get_qr_code(
 
 @router.get(
     "",
-    response_model=ImageDb,
+    response_model=List[ImageDb],
     dependencies=[Depends(allowed_operations_for_self)],
 )
 async def read_images(
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
-) -> List:
+) -> ScalarResult:
     """
     Handles a GET-operation to "" images subroute and gets images of current user.
 
     :param user: The current user.
     :type user: User
     :return: List of images of the current user.
-    :rtype: List
+    :rtype: ScalarResult
     """
     images = await repository_images.read_images(user.id, session)
     return images
