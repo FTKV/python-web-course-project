@@ -24,7 +24,6 @@ from src.schemas.images import (
     ImageModel,
     ImageCreateForm,
     ImageDb,
-    ImageUrlModel,
     ImageDescriptionModel,
     CloudinaryTransformations,
 )
@@ -213,8 +212,6 @@ async def update_image(
 
     :param image_id: The Id of the image.
     :type image_id: UUID4 | int
-    :param body: The data for the image to update.
-    :type body: ImageModel
     :param user: The current user who updated image.
     :type user: User
     :param session: The database session.
@@ -228,7 +225,6 @@ async def update_image(
     """
     image = await repository_images.update_image(
         image_id,
-        body,
         user.id,
         session,
         cache,
@@ -249,7 +245,6 @@ async def update_image(
 )
 async def update_user_image(
     image_id: UUID4 | int,
-    body: ImageUrlModel,
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
@@ -265,8 +260,6 @@ async def update_user_image(
 
     :param image_id: The Id of the image.
     :type image_id: UUID4 | int
-    :param body: The data for the image to update.
-    :type body: ImageUrlModel
     :param user_id: The Id of the user.
     :type user_id: UUID4 | int
     :param session: The database session.
@@ -280,7 +273,6 @@ async def update_user_image(
     """
     image = await repository_images.update_image(
         image_id,
-        body,
         user_id,
         session,
         transformations,
