@@ -79,7 +79,7 @@ async def create_image(
     return image
 
 
-async def read_images(user_id, session: AsyncSession) -> list | None:
+async def read_images(user_id, session: AsyncSession) -> ScalarResult:
     """
     Gets an image with the specified id.
 
@@ -87,8 +87,8 @@ async def read_images(user_id, session: AsyncSession) -> list | None:
     :type image_id: UUID
     :param session: The database session.
     :type session: AsyncSession
-    :return: The list images, or None if it does not exist.
-    :rtype: List | None
+    :return: The ScalarResult with list of images.
+    :rtype: ScalarResult
     """
     stmt = select(Image).filter(user_id == user_id)
     images = await session.execute(stmt)
