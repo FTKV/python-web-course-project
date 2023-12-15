@@ -200,7 +200,7 @@ async def update_image(
     transformations: List[CloudinaryTransformations] = Query(
         ...,
         description="List of Cloudinary image transformations",
-        example=["crop", "resize"],
+        examples=["crop", "resize"],
     ),
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
@@ -251,7 +251,7 @@ async def update_user_image(
     transformations: List[CloudinaryTransformations] = Query(
         ...,
         description="List of Cloudinary image transformations",
-        example=["crop", "resize"],
+        examples=["crop", "resize"],
     ),
 ):
     """

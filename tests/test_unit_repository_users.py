@@ -11,7 +11,7 @@ from src.repository.users import (
     get_user_by_email_from_cache,
     get_user_by_email,
     create_user,
-    update_avatar,
+    update_user,
 )
 
 
