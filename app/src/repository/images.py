@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import settings
 from src.database.models import User, Image
-import src.repository.tags as repository_tagsimages
+import src.repository.tags as repository_tags
 from src.schemas.images import (
     ImageModel,
     ImageDescriptionModel,
@@ -66,9 +66,9 @@ async def create_image(
     if body.tags:
         tags = []
         for tag_title in body.tags:
-            tag = await repository_tagsimages.read_tag(tag_title, session)
+            tag = await repository_tags.read_tag(tag_title, session)
             if not tag:
-                tag = await repository_tagsimages.create_tag(tag_title, user, session)
+                tag = await repository_tags.create_tag(tag_title, user, session)
             tags.append(tag)
         image.tags = tags
     session.add(image)
@@ -78,12 +78,12 @@ async def create_image(
     return image
 
 
-async def read_images(user_id, session: AsyncSession) -> ScalarResult:
+async def read_images(user_id: UUID | int, session: AsyncSession) -> ScalarResult:
     """
     Gets an image with the specified id.
 
     :param image_id: The ID of the image to get.
-    :type image_id: UUID
+    :type image_id: UUID | int
     :param session: The database session.
     :type session: AsyncSession
     :return: The ScalarResult with list of images.
@@ -121,41 +121,36 @@ async def read_image(
 
 
 async def update_image(
-    image_id: UUID,
-    user_id: UUID,
+    image_id: UUID | int,
+    transformations: Enum,
+    user_id: UUID | int,
     session: AsyncSession,
     cache: Redis,
-    transformations: Enum,
 ) -> Image | None:
     """
     Updates existing image
 
     :param image_id: Find the image to update
     :type image_id: UUID | int
-    :param body: Get the fields from the request body
-    :type body: ImageModel
-    :param user_id: Check if the user is allowed to update the image
-    :type user_id: UUID
-    :param session: Pass the current session to the function
-    :type session: AsyncSession
     :param transformations: Image file transformation parameters.
     :type transformations: Enum
+    :param user_id: Check if the user is allowed to update the image
+    :type user_id: UUID | int
+    :param session: Pass the current session to the function
+    :type session: AsyncSession
     :return: The Image object that was updated
     :rtype: Image | None
     """
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
-    if image:
-        if transformations:
-            for i in CloudinaryTransformations:
-                if i.value in transformations:
-                    url = await cloudinary_service.image_transformations(
-                        image.url,
-                        i.value,
-                    )
-        else:
-            url = body.url
+    if image and transformations:
+        for i in CloudinaryTransformations:
+            if i.value in transformations:
+                url = await cloudinary_service.image_transformations(
+                    image.url,
+                    i.value,
+                )
         image.url = url
         await session.commit()
         await set_image_in_cache(image, cache)
@@ -163,9 +158,9 @@ async def update_image(
 
 
 async def patch_image(
-    image_id: UUID,
+    image_id: UUID | int,
     body: ImageDescriptionModel,
-    user_id: UUID,
+    user_id: UUID | int,
     session: AsyncSession,
     cache: Redis,
 ) -> Image | None:
@@ -177,7 +172,7 @@ async def patch_image(
     :param body: Get the fields from the request body
     :type body: ImageModel
     :param user_id: Id of the user to update the image
-    :type user_id: UUID
+    :type user_id: UUID | int
     :param session: Pass the current session to the function
     :type session: AsyncSession
     :param cache: The Redis client.
@@ -196,7 +191,7 @@ async def patch_image(
 
 
 async def delete_image(
-    image_id: UUID | int, user_id: UUID, session: AsyncSession
+    image_id: UUID | int, user_id: UUID | int, session: AsyncSession
 ) -> Image | None:
     """
     Deletes an image from the database.
@@ -204,7 +199,7 @@ async def delete_image(
     :param image_id: Specify the id of the image to delete
     :type image_id: UUID | int
     :param user_id: Id of the user to delete the image
-    :type user_id: UUID
+    :type user_id: UUID | int
     :param session: Pass the session to the function
     :type session: AsyncSession
     :return: The Image object that was deleted
