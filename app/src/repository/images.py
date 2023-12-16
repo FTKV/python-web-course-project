@@ -242,9 +242,6 @@ async def add_tag_to_image(
     :return: The image with tag.
     :rtype: Image | None
     """
-    tag = await repository_tags.read_tag(tag_title, session)
-    if not tag:
-        tag = await repository_tags.create_tag(tag_title, user, session)
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
@@ -254,6 +251,9 @@ async def add_tag_to_image(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Can't exceeded the maximum number ({MAX_NUMBER_OF_TAGS_PER_IMAGE}) of tags per image",
             )
+        tag = await repository_tags.read_tag(tag_title, session)
+        if not tag:
+            tag = await repository_tags.create_tag(tag_title, user, session)
         if tag not in image.tags:
             image.tags.append(tag)
             await session.commit()
@@ -265,7 +265,6 @@ async def delete_tag_from_image(
     image_id: UUID | int,
     tag_title: str,
     user_id: UUID | int,
-    user: User,
     session: AsyncSession,
     cache: Redis,
 ) -> Image | None:
@@ -278,8 +277,6 @@ async def delete_tag_from_image(
     :type tag_title: str
     :param user_id: Id of the user who delete tag from the image.
     :type user_id: UUID | int
-    :param user: User who delete tag.
-    :type user: User
     :param session: The database session.
     :type session: AsyncSession
     :param cache: The Redis client.
@@ -287,13 +284,16 @@ async def delete_tag_from_image(
     :return: The image without tag.
     :rtype: Image | None
     """
-    tag = await repository_tags.read_tag(tag_title, session)
-    if not tag:
-        tag = await repository_tags.create_tag(tag_title, user, session)
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
+        tag = await repository_tags.read_tag(tag_title, session)
+        if tag is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tag not found",
+            )
         if image.tags and tag in image.tags:
             image.tags.remove(tag)
             await session.commit()
