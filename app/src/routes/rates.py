@@ -1,14 +1,14 @@
 """
 Module of commentss' routes
 """
-
 from pydantic import UUID4
+from redis.asyncio.client import Redis
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.connect_db import get_session
+from src.database.connect_db import get_session, get_redis_db1
 from src.database.models import User, Role
 from src.repository import rates as repository_rates
 from src.schemas.rates import RateModel, RateResponse, RateImageResponse
@@ -119,17 +119,18 @@ async def read_all_user_rates(
 async def read_avg_rate_to_photo(
     image_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
 ):
     """
-    Returns the average rate of a photo.
-
+    Returns the average rate of a photo given its id.
+    
     :param image_id: UUID4 | int: Specify the image_id of the photo to be rated
     :param session: AsyncSession: Pass the session to the repository layer
-    :param : Get the average rate of a photo
+    :param cache: Redis: Get the average rate of a photo
+    :param : Get the rate of a photo
     :return: The average rate of a photo given its id
     """
-
-    return await repository_rates.read_avg_rate_to_photo(image_id, session)
+    return await repository_rates.read_avg_rate_to_photo(image_id, session, cache)
 
 
 @router.get(
@@ -140,23 +141,24 @@ async def read_avg_rate_to_photo(
 
 async def read_all_avg_rates(
     session: AsyncSession = Depends(get_session),
+    cache: Redis = Depends(get_redis_db1),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=1000),
 ):
     """
     Returns a list of all the average rates in the database.
-
+    
     :param session: AsyncSession: Get the database session
+    :param cache: Redis: Get the redis session to be used in the function
     :param offset: int: Specify the number of records to skip
     :param ge: Specify a minimum value for the parameter
     :param limit: int: Limit the number of results returned
-    :param ge: Specify that the value must be greater than or equal to the given value
+    :param ge: Specify a minimum value for the parameter
     :param le: Limit the number of results returned
-    :param : Get the session to be used in the function
-    :return: A list of average rates
+    :param : Specify the number of records to skip
+    :return: A list of all the average rates in the database
     """
-
-    return await repository_rates.read_all_avg_rates(offset, limit, session)
+    return await repository_rates.read_all_avg_rates(offset, limit, session, cache)
 
 @router.post(
     "/{image_id}",

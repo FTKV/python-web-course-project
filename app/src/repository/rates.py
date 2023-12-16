@@ -3,14 +3,17 @@ Module of rates' repository CRUD
 """
 
 from pydantic import UUID4
+from redis.asyncio.client import Redis
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
+
 from src.database.models import Rate, User, Image
 from src.schemas.rates import RateModel, RateImageResponse
 from src.repository.images import read_image
+from src.database.connect_db import get_session, get_redis_db1
 
 async def read_all_rates_to_photo(
     image_id: UUID4 | int,
@@ -52,7 +55,10 @@ async def read_all_my_rates(
     return rates.scalars()
 
 async def read_all_user_rates(
-    user_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
+    user_id: UUID4 | int,
+    offset: int,
+    limit: int,
+    session: AsyncSession,
 ) -> ScalarResult:
     """
     Returns a list of all the rates that a user has made.
@@ -72,38 +78,44 @@ async def read_all_user_rates(
 
 async def read_avg_rate_to_photo(
     image_id: UUID4 | int,
-    session: AsyncSession) -> RateImageResponse | None :
+    session: AsyncSession,
+    cache: Redis
+    ) -> RateImageResponse | None :
+
     """
     Returns the average rate of a photo.
     
     :param image_id: UUID4 | int: Specify the image id of which we want to get the average rating
     :param session: AsyncSession: Pass the session to the function
+    :param cache: Redis: Pass the redis cache to the function
     :return: The average rate of the photo
     """
     stmt = select(func.avg(Rate.rate)).where(Rate.image_id == image_id)
     avg_rate = await session.execute(stmt)
-    image = await read_image(image_id, session)
+    image = await read_image(image_id=image_id, session=session, cache=cache)
     return RateImageResponse(image = image, avg_rate=avg_rate.scalar())
 
 async def read_all_avg_rates(
     offset: int,
     limit: int,
-    session: AsyncSession) -> List[RateImageResponse] | None:
+    session: AsyncSession,
+    cache: Redis) -> List[RateImageResponse] | None:
+
     """
     Returns a list of Image objects by average rate rating.
-    Each object contains an image and its average rate. The function sorts the 
-    list by the average rate in descending order.
+    Each object contains an image and its average rate. 
     
     :param offset: int: Specify the number of rows to skip
     :param limit: int: Limit the number of results returned
     :param session: AsyncSession: Pass the session to the function
-    :return: A list of imageobjects and rates
+    :param cache: Redis: Pass the cache to the function
+    :return: A list of image objects and rates
     """
     stmt = select(Image.id)
     stmt = stmt.offset(offset).limit(limit)
     all_image_id = await session.execute(stmt)
     all_image_id = all_image_id.scalars().all()
-    table_rates = [await read_avg_rate_to_photo(image_id,session) for image_id in all_image_id]
+    table_rates = [await read_avg_rate_to_photo(image_id, session, cache) for image_id in all_image_id]
     sort_table_rates = sorted(table_rates, key = lambda x: 
         (x.avg_rate is None, -x.avg_rate if x.avg_rate is not None else None), reverse=False)
 
