@@ -560,7 +560,6 @@ async def delete_tag_from_image(
         image_id,
         tag_title,
         user.id,
-        user,
         session,
         cache,
     )
@@ -581,7 +580,6 @@ async def delete_tag_from_user_image(
     image_id: UUID4 | int,
     tag_title: str,
     user_id: UUID4 | int,
-    user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
@@ -608,7 +606,6 @@ async def delete_tag_from_user_image(
         image_id,
         tag_title,
         user_id,
-        user,
         session,
         cache,
     )
