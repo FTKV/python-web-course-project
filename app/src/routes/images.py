@@ -211,6 +211,7 @@ async def update_image(
 
         List of Cloudinary image transformations:
         
+        none = ""
         crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
         resize (downscaling)= "ar_1.0,c_fill,h_250",
         rotate (turn 10 degrees clockwise)= "a_10/",
@@ -286,6 +287,7 @@ async def update_user_image(
         
         List of Cloudinary image transformations:
         
+        none = ""
         crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
         resize (downscaling)= "ar_1.0,c_fill,h_250",
         rotate (turn 10 degrees clockwise [0-360])= "a_10/",

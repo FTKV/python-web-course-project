@@ -11,8 +11,8 @@ def generate_qr_code(image_url: str) -> None:
 
     :param image_url: URL of the image
     :type image_url: str.
-    :return BytesIO: File in image/png format with QR-code url.
-    :rtype BytesIO:
+    :return: None
+    :rtype: None
     """
     qr = qrcode.QRCode(
         version=1,
