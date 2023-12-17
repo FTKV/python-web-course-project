@@ -27,10 +27,9 @@ from src.schemas.images import (
     ImageDescriptionModel,
     CloudinaryTransformations,
 )
-
-
 from src.conf.config import settings
 
+IMAGE_NOT_FOUND = "Image not found"
 
 router = APIRouter(prefix="/images", tags=["images"])
 
@@ -197,9 +196,20 @@ async def read_user_images(
 )
 async def update_image(
     image_id: UUID4 | int,
+    image_url: str = Query(
+        "",
+        description="""Prefetch the image string url from the image viewer and paste it into the image_url field.
+        
+        Between /image/upload/ and version number 'v1505732346/' paste (or cut) transformations pattern.
+
+        In List of Cloudinary image transformations select empty clause enum.
+        """,
+    ),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
-        description="""List of Cloudinary image transformations:
+        description="""If you use this constructor, leave the image_id field unchanged.
+
+        List of Cloudinary image transformations:
         
         crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
         resize (downscaling)= "ar_1.0,c_fill,h_250",
@@ -228,6 +238,8 @@ async def update_image(
     :type session: AsyncSession
     :param cache: The Redis client.
     :type cache: Redis
+    :param image_url: The cloudinary image url.
+    :type image_url: str
     :param transformations: The Enum list of the image file transformation parameters.
     :type transformations: List
     :return: The updated image object.
@@ -235,6 +247,7 @@ async def update_image(
     """
     image = await repository_images.update_image(
         image_id,
+        image_url,
         transformations,
         user.id,
         session,
@@ -243,7 +256,7 @@ async def update_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -258,13 +271,24 @@ async def update_user_image(
     user_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
+    image_url: str = Query(
+        "",
+        description="""Prefetch the image string url from the image viewer and paste it into the image_url field.
+        
+        Between /image/upload/ and version number 'v1505732346/' paste (or cut) transformations pattern.
+
+        In List of Cloudinary image transformations select empty clause enum.
+        """,
+    ),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
-        description="""List of Cloudinary image transformations:
+        description="""If you use this constructor, leave the image_id field unchanged.
+        
+        List of Cloudinary image transformations:
         
         crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
         resize (downscaling)= "ar_1.0,c_fill,h_250",
-        rotate (turn 10 degrees clockwise)= "a_10/",
+        rotate (turn 10 degrees clockwise [0-360])= "a_10/",
         improve = "e_improve:outdoor:29/",
         brightness = "e_brightness:80/",
         blackwhite = "e_blackwhite:49/",
@@ -286,6 +310,8 @@ async def update_user_image(
     :type session: AsyncSession
     :param cache: The Redis client.
     :type cache: Redis
+    :param image_url: The cloudinary image url.
+    :type image_url: str
     :param transformations: The Enum list of the image file transformation parameters.
     :type transformations: List
     :return: The updated image object.
@@ -293,6 +319,7 @@ async def update_user_image(
     """
     image = await repository_images.update_image(
         image_id,
+        image_url,
         transformations,
         user_id,
         session,
@@ -301,7 +328,7 @@ async def update_user_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -347,7 +374,7 @@ async def patch_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -391,7 +418,7 @@ async def patch_user_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -496,7 +523,7 @@ async def add_tag_to_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -542,7 +569,7 @@ async def add_tag_to_user_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -586,7 +613,7 @@ async def delete_tag_from_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image
 
@@ -632,6 +659,6 @@ async def delete_tag_from_user_image(
     if image is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail=IMAGE_NOT_FOUND,
         )
     return image

@@ -50,6 +50,7 @@ class ImageDescriptionModel(BaseModel):
 
 
 class CloudinaryTransformations(str, Enum):
+    none = ""
     crop = "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/"
     resize = "ar_1.0,c_fill,h_250"
     rotate = "a_10/"

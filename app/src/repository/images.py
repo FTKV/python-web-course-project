@@ -89,7 +89,7 @@ async def read_images(user_id: UUID | int, session: AsyncSession) -> ScalarResul
     :return: The ScalarResult with list of images.
     :rtype: ScalarResult
     """
-    stmt = select(Image).filter(Image.user_id == user_id)
+    stmt = select(Image)
     images = await session.execute(stmt)
     return images.scalars()
 
@@ -122,6 +122,7 @@ async def read_image(
 
 async def update_image(
     image_id: UUID | int,
+    image_url: str,
     transformations: Enum,
     user_id: UUID | int,
     session: AsyncSession,
@@ -132,6 +133,8 @@ async def update_image(
 
     :param image_id: Find the image to update
     :type image_id: UUID | int
+    :param image_url: The cloudinary image url.
+    :type image_url: str
     :param transformations: Image file transformation parameters.
     :type transformations: Enum
     :param user_id: Check if the user is allowed to update the image
@@ -144,14 +147,16 @@ async def update_image(
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
-    if image and transformations:
-        for i in CloudinaryTransformations:
-            if i.value in transformations:
-                url = await cloudinary_service.image_transformations(
-                    image.url,
-                    i.value,
-                )
-        image.url = url
+    if image:
+        if image_url is None:
+            if transformations:
+                for i in CloudinaryTransformations:
+                    if i.value in transformations:
+                        image_url = await cloudinary_service.image_transformations(
+                            image.url,
+                            i.value,
+                        )
+        image.url = image_url
         await session.commit()
         await set_image_in_cache(image, cache)
     return image
