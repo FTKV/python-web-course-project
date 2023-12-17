@@ -127,7 +127,7 @@ async def login(
     :rtype: dict
     """
     user = await repository_users.get_user_by_email(body.username, session)
-    if user is None:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email"
         )
@@ -174,7 +174,7 @@ async def logout(
     await auth_service.check_token_in_black_list(token, cache)
     email = await auth_service.decode_access_token(token)
     user = await repository_users.get_user_by_email(email, session)
-    if user is None:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email"
         )
@@ -184,15 +184,15 @@ async def logout(
 
 @router.get("/refresh_token", response_model=TokenModel)
 async def refresh_token(
-    credentials: HTTPAuthorizationCredentials = Security(security),
+    http_auth_credentials: HTTPAuthorizationCredentials = Security(security),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
     """
     Handles a GET-operation to '/refresh_token' auth subroute and updates a refresh token for a specific user.
 
-    :param credentials: The http authorization credentials of user to update the refresh token for.
-    :type credentials: HTTPAuthorizationCredentials
+    :param http_auth_credentials: The http authorization credentials of user to update the refresh token for.
+    :type http_auth_credentials: HTTPAuthorizationCredentials
     :param session: The database session.
     :type session: AsyncSession
     :param cache: The Redis client.
@@ -200,11 +200,11 @@ async def refresh_token(
     :return: The dict with generated tokens.
     :rtype: dict
     """
-    token = credentials.credentials
+    token = http_auth_credentials.credentials
     await auth_service.check_token_in_black_list(token, cache)
     email = await auth_service.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, session)
-    if user is None:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email"
         )
@@ -278,7 +278,7 @@ async def confirm_email(
     await auth_service.check_token_in_black_list(token, cache)
     email = await auth_service.decode_email_verification_token(token)
     user = await repository_users.get_user_by_email(email, session)
-    if user is None or not user.is_password_valid:
+    if not user or not user.is_password_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
         )
@@ -346,7 +346,7 @@ async def reset_password(
     await auth_service.check_token_in_black_list(token, cache)
     email = await auth_service.decode_password_reset_token(token)
     user = await repository_users.get_user_by_email(email, session)
-    if user is None or not user.is_email_confirmed:
+    if not user or not user.is_email_confirmed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Reset password error"
         )
@@ -384,7 +384,7 @@ async def set_password(
     await auth_service.check_token_in_black_list(token, cache)
     email = await auth_service.decode_password_set_token(token)
     user = await repository_users.get_user_by_email(email, session)
-    if user is None or not user.is_email_confirmed or user.is_password_valid:
+    if not user or not user.is_email_confirmed or user.is_password_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Set password error",

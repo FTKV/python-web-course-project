@@ -16,6 +16,9 @@ from sqlalchemy.ext.asyncio import (
 from src.conf.config import settings
 
 
+REDIS_DB_FOR_RATE_LIMITER = 0
+REDIS_DB_FOR_OBJECTS = 1
+
 engine: AsyncEngine = create_async_engine(
     settings.sqlalchemy_database_url_async,
     echo=False,
@@ -33,7 +36,7 @@ async def get_session():
     except SQLAlchemyError as error_message:
         await session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(error_message)}",
         )
     finally:
@@ -42,7 +45,7 @@ async def get_session():
 
 redis_db0 = redis.from_url(
     settings.redis_url,
-    db=0,
+    db=REDIS_DB_FOR_RATE_LIMITER,
     encoding="utf-8",
     decode_responses=True,
 )
@@ -52,7 +55,7 @@ pool_redis_db = redis.ConnectionPool.from_url(settings.redis_url + "/1")
 async def get_redis_db1():
     client = redis.Redis(
         connection_pool=pool_redis_db,
-        db=1,
+        db=REDIS_DB_FOR_OBJECTS,
         encoding="utf-8",
         decode_responses=False,
     )
@@ -60,7 +63,7 @@ async def get_redis_db1():
         yield client
     except redis.RedisError as error_message:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Redis error: {str(error_message)}",
         )
     finally:
