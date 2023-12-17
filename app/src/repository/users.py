@@ -81,16 +81,12 @@ async def get_user_by_username(username: str, session: AsyncSession) -> User | N
     return user.scalar()
 
 
-async def create_user(
-    data: UserModel, file: UploadFile, session: AsyncSession, cache: Redis
-) -> User:
+async def create_user(data: UserModel, session: AsyncSession, cache: Redis) -> User:
     """
     Creates a new user.
 
     :param data: The data for the user to create.
     :type data: UserModel
-    :param file: The uploaded file to create avatar from.
-    :type file: UploadFile
     :param session: The database session.
     :type session: AsyncSession
     :param cache: The Redis client.
@@ -104,18 +100,18 @@ async def create_user(
         role = Role.user
     else:
         role = Role.administrator
-    if file:
-        avatar = await cloudinary_service.upload_avatar(
-            file.file, data.username, file.filename
+    if data.avatar:
+        data.avatar = await cloudinary_service.upload_avatar(
+            data.avatar.file, data.username, data.avatar.filename
         )
     else:
-        avatar = None
+        data.avatar = None
         try:
             g = Gravatar(data.email)
-            avatar = g.get_image()
+            data.avatar = g.get_image()
         except Exception:
             pass
-    user = User(**data.model_dump(), avatar=avatar, role=role)
+    user = User(**data.model_dump(), role=role)
     session.add(user)
     await session.commit()
     await session.refresh(user)
@@ -126,7 +122,6 @@ async def create_user(
 async def update_user(
     email: EmailStr,
     data: UserUpdateModel,
-    file: UploadFile,
     session: AsyncSession,
     cache: Redis,
 ) -> User:
@@ -135,8 +130,6 @@ async def update_user(
 
     :param data: The data for the user to update.
     :type data: UserUpdateModel
-    :param file: The uploaded file to update avatar from.
-    :type file: UploadFile
     :param session: The database session.
     :type session: AsyncSession
     :param cache: The Redis client.
@@ -149,9 +142,9 @@ async def update_user(
     user.last_name = data.last_name
     user.phone = data.phone
     user.birthday = data.birthday
-    if file:
+    if data.avatar:
         user.avatar = await cloudinary_service.upload_avatar(
-            file.file, user.username, file.filename
+            data.avatar.file, user.username, data.avatar.filename
         )
     await session.commit()
     await set_user_in_cache(user, cache)
