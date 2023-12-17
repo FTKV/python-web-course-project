@@ -15,7 +15,7 @@ from src.database.models import User, Role
 from src.repository import users as repository_users
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
-from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel, UserUpdateForm
+from src.schemas.users import UserDb, UserUpdateModel, UserSetRoleModel
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -73,7 +73,7 @@ async def read_user(username: str, session: AsyncSession = Depends(get_session))
     dependencies=[Depends(allowed_operations_read_update)],
 )
 async def update_me(
-    data: UserUpdateForm = Depends(),
+    data: UserUpdateModel = Depends(UserUpdateModel.as_form),
     file: Annotated[UploadFile, File()] = None,
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
@@ -95,13 +95,6 @@ async def update_me(
     :return: The updated user.
     :rtype: User
     """
-    try:
-        data = UserUpdateModel(**asdict(data))
-    except Exception as error_message:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error_message),
-        )
     return await repository_users.update_user(user.email, data, file, session, cache)
 
 
