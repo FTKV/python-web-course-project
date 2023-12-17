@@ -1,6 +1,8 @@
 """
 Module of commentss' routes
 """
+
+
 from pydantic import UUID4
 from redis.asyncio.client import Redis
 from typing import List
@@ -16,24 +18,26 @@ from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 
 allowed_operation_get = RoleAccess([Role.administrator, Role.moderator, Role.user])
-allowed_operation_create = RoleAccess(
-    [Role.administrator, Role.moderator, Role.user])
-allowed_operation_update = RoleAccess(
-    [Role.administrator, Role.moderator, Role.user])
+allowed_operation_create = RoleAccess([Role.administrator, Role.moderator, Role.user])
+allowed_operation_update = RoleAccess([Role.administrator, Role.moderator, Role.user])
 allowed_operation_remove = RoleAccess([Role.administrator, Role.moderator])
 allowed_operation_non_user = RoleAccess([Role.administrator, Role.moderator])
 
 router = APIRouter(prefix="/rates", tags=["rates"])
 
+
 @router.get(
     "/{image_id}",
     response_model=List[RateResponse],
-    dependencies=[Depends(allowed_operation_get),
-                  Depends(auth_service.get_current_user)])
+    dependencies=[
+        Depends(allowed_operation_get),
+        Depends(auth_service.get_current_user),
+    ],
+)
 async def read_all_rates_to_photo(
     image_id: UUID4 | int,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=10, ge=1, le=1000), 
+    limit: int = Query(default=10, ge=1, le=1000),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -50,7 +54,10 @@ async def read_all_rates_to_photo(
     :return: A list of rates
     """
 
-    return await repository_rates.read_all_rates_to_photo(image_id, offset, limit, session)
+    return await repository_rates.read_all_rates_to_photo(
+        image_id, offset, limit, session
+    )
+
 
 @router.get(
     "/my/rates",
@@ -81,6 +88,7 @@ async def read_all_my_rates(
         current_user, offset, limit, session
     )
 
+
 @router.get(
     "/user/rates",
     response_model=List[RateResponse],
@@ -106,16 +114,17 @@ async def read_all_user_rates(
     :return: A list of rates
     """
 
-    return await repository_rates.read_all_user_rates(
-        user_id, offset, limit, session
-    )
+    return await repository_rates.read_all_user_rates(user_id, offset, limit, session)
 
 
 @router.get(
     "/{image_id}/avg",
     response_model=RateImageResponse,
-    dependencies=[Depends(allowed_operation_get),
-                  Depends(auth_service.get_current_user)])
+    dependencies=[
+        Depends(allowed_operation_get),
+        Depends(auth_service.get_current_user),
+    ],
+)
 async def read_avg_rate_to_photo(
     image_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
@@ -123,7 +132,7 @@ async def read_avg_rate_to_photo(
 ):
     """
     Returns the average rate of a photo given its id.
-    
+
     :param image_id: UUID4 | int: Specify the image_id of the photo to be rated
     :param session: AsyncSession: Pass the session to the repository layer
     :param cache: Redis: Get the average rate of a photo
@@ -136,9 +145,11 @@ async def read_avg_rate_to_photo(
 @router.get(
     "/avg/all",
     response_model=List[RateImageResponse],
-    dependencies=[Depends(allowed_operation_get),
-        Depends(auth_service.get_current_user)])
-
+    dependencies=[
+        Depends(allowed_operation_get),
+        Depends(auth_service.get_current_user),
+    ],
+)
 async def read_all_avg_rates(
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
@@ -147,7 +158,7 @@ async def read_all_avg_rates(
 ):
     """
     Returns a list of all the average rates in the database.
-    
+
     :param session: AsyncSession: Get the database session
     :param cache: Redis: Get the redis session to be used in the function
     :param offset: int: Specify the number of records to skip
@@ -160,16 +171,19 @@ async def read_all_avg_rates(
     """
     return await repository_rates.read_all_avg_rates(offset, limit, session, cache)
 
+
 @router.post(
     "/{image_id}",
     response_model=RateResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(allowed_operation_create)])
+    dependencies=[Depends(allowed_operation_create)],
+)
 async def create_rate_to_photo(
     image_id: UUID4 | int,
     body: RateModel,
     current_user: User = Depends(auth_service.get_current_user),
-    session: AsyncSession = Depends(get_session)):
+    session: AsyncSession = Depends(get_session),
+):
     """
     Creates a new rate to photo.
 
@@ -180,22 +194,29 @@ async def create_rate_to_photo(
     :return: A ratemodel object
     """
 
-    rate = await repository_rates.create_rate_to_photo(image_id, body, current_user, session)
+    rate = await repository_rates.create_rate_to_photo(
+        image_id, body, current_user, session
+    )
     if rate is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found or forbiden to rate twice or forbidden to rate your photo"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image not found or forbiden to rate twice or forbidden to rate your photo",
         )
     return rate
+
 
 @router.delete(
     "/{rate_id}",
     response_model=RateResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(allowed_operation_create),
-                  Depends(auth_service.get_current_user)])
+    dependencies=[
+        Depends(allowed_operation_create),
+        Depends(auth_service.get_current_user),
+    ],
+)
 async def delete_rate_to_photo(
-    rate_id: UUID4 | int,
-    session: AsyncSession = Depends(get_session)):
+    rate_id: UUID4 | int, session: AsyncSession = Depends(get_session)
+):
     """
     Deletes a rate to photo.
 
@@ -205,5 +226,3 @@ async def delete_rate_to_photo(
     """
 
     return await repository_rates.delete_rate_to_photo(rate_id, session)
-
-
