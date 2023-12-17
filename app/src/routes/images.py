@@ -106,7 +106,7 @@ async def read_image(
     image = await repository_images.read_image(image_id, session, cache)
     if image is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Image not Found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=IMAGE_NOT_FOUND
         )
     return image
 
@@ -133,7 +133,9 @@ async def get_qr_code(
     """
     image = await repository_images.read_image(image_id, session, cache)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=IMAGE_NOT_FOUND
+        )
     image_url = image.url
     generate_qr_code(image_url)
     return FileResponse(
@@ -451,7 +453,7 @@ async def delete_image(
     image = await repository_images.delete_image(image_id, user.id, session)
     if image is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=IMAGE_NOT_FOUND
         )
     return None
 
@@ -482,7 +484,7 @@ async def delete_user_image(
     image = await repository_images.delete_image(image_id, user_id, session)
     if image is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=IMAGE_NOT_FOUND
         )
     return None
 
