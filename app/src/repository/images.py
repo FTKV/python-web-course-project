@@ -89,7 +89,7 @@ async def read_images(user_id: UUID | int, session: AsyncSession) -> ScalarResul
     :return: The ScalarResult with list of images.
     :rtype: ScalarResult
     """
-    stmt = select(Image)
+    stmt = select(Image).filter(Image.user_id == user_id)
     images = await session.execute(stmt)
     return images.scalars()
 
