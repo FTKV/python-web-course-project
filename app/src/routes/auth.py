@@ -53,7 +53,6 @@ async def signup(
     background_tasks: BackgroundTasks,
     request: Request,
     data: UserModel = Depends(UserModel.as_form),
-    file: Annotated[UploadFile, File()] = None,
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
@@ -86,7 +85,7 @@ async def signup(
             status_code=status.HTTP_409_CONFLICT, detail="The account already exists"
         )
     data.password = auth_service.get_password_hash(data.password.get_secret_value())
-    user = await repository_users.create_user(data, file, session, cache)
+    user = await repository_users.create_user(data, session, cache)
     email_verification_token = await auth_service.create_email_verification_token(
         {"sub": user.email}
     )

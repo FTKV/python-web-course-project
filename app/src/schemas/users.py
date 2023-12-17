@@ -18,7 +18,7 @@ from pydantic import (
 )
 from typing import Type, Annotated
 
-from fastapi import Form
+from fastapi import Form, UploadFile, File
 from fastapi.exceptions import RequestValidationError
 
 from src.database.models import Role
@@ -34,7 +34,9 @@ def as_form(cls: Type[BaseModel]):
                 inspect.Parameter(
                     field_name,
                     inspect.Parameter.POSITIONAL_ONLY,
-                    default=Form(model_field.default),
+                    default=File(model_field.default)
+                    if model_field.annotation == UploadFile
+                    else Form(model_field.default),
                     annotation=model_field.annotation,
                 )
             )
@@ -43,7 +45,9 @@ def as_form(cls: Type[BaseModel]):
                 inspect.Parameter(
                     field_name,
                     inspect.Parameter.POSITIONAL_ONLY,
-                    default=Form(None),
+                    default=File(None)
+                    if model_field.annotation == UploadFile
+                    else Form(None),
                     annotation=model_field.annotation,
                 )
             )
@@ -70,6 +74,7 @@ class UserModel(BaseModel):
     last_name: Annotated[str | None, Field(max_length=254)] = None
     phone: Annotated[str | None, Field(max_length=38)] = None
     birthday: date | None = None
+    avatar: Annotated[UploadFile | None, File()] = None
 
     @classmethod
     def __get_validators__(cls):
@@ -88,6 +93,7 @@ class UserUpdateModel(BaseModel):
     last_name: Annotated[str | None, Field(max_length=254)] = None
     phone: Annotated[str | None, Field(max_length=38)] = None
     birthday: date | None = None
+    avatar: Annotated[UploadFile | None, File(...)] = None
 
     @classmethod
     def __get_validators__(cls):
