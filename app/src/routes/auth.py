@@ -32,7 +32,6 @@ from src.schemas.users import (
     UserRequestEmail,
     UserPasswordSetModel,
     UserResponse,
-    UserCreateForm,
 )
 from src.schemas.tokens import TokenModel, TokenPasswordSetModel
 from src.repository import users as repository_users
@@ -53,8 +52,8 @@ security = HTTPBearer()
 async def signup(
     background_tasks: BackgroundTasks,
     request: Request,
+    data: UserModel = Depends(UserModel.as_form),
     file: Annotated[UploadFile, File()] = None,
-    data: UserCreateForm = Depends(),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
@@ -76,13 +75,6 @@ async def signup(
     :return: The dict with the newly created user and the message.
     :rtype: dict
     """
-    try:
-        data = UserModel(**asdict(data))
-    except Exception as error_message:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error_message),
-        )
     if not re.match(r"(?i)^(?!me$).*", data.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -93,7 +85,7 @@ async def signup(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="The account already exists"
         )
-    data.password = auth_service.get_password_hash(data.password)
+    data.password = auth_service.get_password_hash(data.password.get_secret_value())
     user = await repository_users.create_user(data, file, session, cache)
     email_verification_token = await auth_service.create_email_verification_token(
         {"sub": user.email}
