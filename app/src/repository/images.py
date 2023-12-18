@@ -122,7 +122,6 @@ async def read_image(
 
 async def update_image(
     image_id: UUID | int,
-    image_url: str,
     transformations: Enum,
     user_id: UUID | int,
     session: AsyncSession,
@@ -133,14 +132,14 @@ async def update_image(
 
     :param image_id: Find the image to update
     :type image_id: UUID | int
-    :param image_url: The cloudinary image url.
-    :type image_url: str
     :param transformations: Image file transformation parameters.
     :type transformations: Enum
     :param user_id: Check if the user is allowed to update the image
     :type user_id: UUID | int
     :param session: Pass the current session to the function
     :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
     :return: The Image object that was updated
     :rtype: Image | None
     """
@@ -148,14 +147,13 @@ async def update_image(
     image = await session.execute(stmt)
     image = image.scalar()
     if image:
-        if image_url is None:
-            if transformations:
-                for i in CloudinaryTransformations:
-                    if i.value in transformations:
-                        image_url = await cloudinary_service.image_transformations(
-                            image.url,
-                            i.value,
-                        )
+        if transformations:
+            for i in CloudinaryTransformations:
+                if i.value in transformations:
+                    image_url = await cloudinary_service.image_transformations(
+                        image.url,
+                        i.value,
+                    )
         image.url = image_url
         await session.commit()
         await set_image_in_cache(image, cache)

@@ -42,6 +42,7 @@ allowed_operations_for_all = RoleAccess([Role.administrator])
 @router.post(
     "",
     response_model=ImageDb,
+    status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operations_for_self)],
 )
 async def create_image(
@@ -171,14 +172,12 @@ async def update_image(
     cache: Redis = Depends(get_redis_db1),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
-        description="""If you use this constructor, leave the image_id field unchanged.
-
-        List of Cloudinary image transformations:
+        description="""List of Cloudinary image transformations:
         
         none = ""
         crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
         resize (downscaling)= "ar_1.0,c_fill,h_250",
-        rotate (turn 10 degrees clockwise)= "a_10/",
+        rotate (turn 10 degrees clockwise [0-360])= "a_10/",
         improve = "e_improve:outdoor:29/",
         brightness = "e_brightness:80/",
         blackwhite = "e_blackwhite:49/",
@@ -200,8 +199,6 @@ async def update_image(
     :type session: AsyncSession
     :param cache: The Redis client.
     :type cache: Redis
-    :param image_url: The cloudinary image url.
-    :type image_url: str
     :param transformations: The Enum list of the image file transformation parameters.
     :type transformations: List
     :return: The updated image object.
@@ -209,10 +206,10 @@ async def update_image(
     """
     image = await repository_images.update_image(
         image_id,
+        transformations,
         user.id,
         session,
         cache,
-        transformations,
     )
     if image is None:
         raise HTTPException(
