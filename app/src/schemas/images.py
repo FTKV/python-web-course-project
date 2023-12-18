@@ -76,5 +76,5 @@ class CloudinaryTransformations(str, Enum):
     brightness = "e_brightness:80/"
     blackwhite = "e_blackwhite:49/"
     saturation = "e_saturation:50/"
-    border = "bo_5px_solid_lightblue/"
+    border = "bo_10px_solid_lightblue/"
     rounded_corners = "r_100/"

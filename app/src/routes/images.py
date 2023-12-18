@@ -169,8 +169,18 @@ async def update_image(
     cache: Redis = Depends(get_redis_db1),
     transformations: List[CloudinaryTransformations] = Query(
         ...,
-        description="List of Cloudinary image transformations",
-        examples=["crop", "resize"],
+        description="""List of Cloudinary image transformations:
+        
+        crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
+        resize (downscaling)= "ar_1.0,c_fill,h_250",
+        rotate (turn 10 degrees clockwise)= "a_10/",
+        improve = "e_improve:outdoor:29/",
+        brightness = "e_brightness:80/",
+        blackwhite = "e_blackwhite:49/",
+        saturation = "e_saturation:50/",
+        border = "bo_10px_solid_lightblue/",
+        rounded_corners = "r_100/"
+        """,
     ),
 ):
     """
