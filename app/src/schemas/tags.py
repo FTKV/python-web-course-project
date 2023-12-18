@@ -16,8 +16,7 @@ class TagModel(BaseModel):
         StringConstraints(
             min_length=2,
             max_length=49,
-            json_schema_extra={'strip_whitespace': True},#
-            #strip_whitespace=True,
+            strip_whitespace=True,
             pattern=r"^[a-zA-Z0-9_.-]+$",
         ),
     ] = Field()
