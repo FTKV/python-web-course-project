@@ -4,7 +4,6 @@ Module of users' schemas
 
 
 from datetime import datetime, date
-import inspect
 import json
 from pydantic import (
     BaseModel,
@@ -14,51 +13,14 @@ from pydantic import (
     HttpUrl,
     UUID4,
     ConfigDict,
-    ValidationError,
+    SkipValidation,
 )
-from typing import Type, Annotated
+from typing import Annotated
 
-from fastapi import Form
-from fastapi.exceptions import RequestValidationError
+from fastapi import UploadFile
 
 from src.database.models import Role
-
-
-def as_form(cls: Type[BaseModel]):
-    new_parameters = []
-
-    for field_name, model_field in cls.model_fields.items():
-        model_field: ModelField  # type: ignore
-        if model_field.is_required:
-            new_parameters.append(
-                inspect.Parameter(
-                    field_name,
-                    inspect.Parameter.POSITIONAL_ONLY,
-                    default=Form(model_field.default),
-                    annotation=model_field.annotation,
-                )
-            )
-        else:
-            new_parameters.append(
-                inspect.Parameter(
-                    field_name,
-                    inspect.Parameter.POSITIONAL_ONLY,
-                    default=Form(None),
-                    annotation=model_field.annotation,
-                )
-            )
-
-    async def as_form_func(**data):
-        try:
-            return cls(**data)
-        except ValidationError as e:
-            raise RequestValidationError(e.errors())
-
-    sig = inspect.signature(as_form_func)
-    sig = sig.replace(parameters=new_parameters)
-    as_form_func.__signature__ = sig  # type: ignore
-    setattr(cls, "as_form", as_form_func)
-    return cls
+from src.utils.as_form import as_form
 
 
 @as_form
@@ -70,6 +32,7 @@ class UserModel(BaseModel):
     last_name: Annotated[str | None, Field(max_length=254)] = None
     phone: Annotated[str | None, Field(max_length=38)] = None
     birthday: date | None = None
+    avatar: Annotated[UploadFile, SkipValidation] = None
 
     @classmethod
     def __get_validators__(cls):
@@ -88,6 +51,7 @@ class UserUpdateModel(BaseModel):
     last_name: Annotated[str | None, Field(max_length=254)] = None
     phone: Annotated[str | None, Field(max_length=38)] = None
     birthday: date | None = None
+    avatar: Annotated[UploadFile, SkipValidation] = None
 
     @classmethod
     def __get_validators__(cls):

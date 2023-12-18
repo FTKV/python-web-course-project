@@ -6,7 +6,7 @@ from enum import Enum
 import pickle
 from typing import List
 
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, status
 from redis.asyncio.client import Redis
 from sqlalchemy import select, UUID, and_
 from sqlalchemy.engine.result import ScalarResult
@@ -40,7 +40,7 @@ async def set_image_in_cache(image: Image, cache: Redis) -> None:
 
 
 async def create_image(
-    file: UploadFile, body: ImageModel, user: User, session: AsyncSession, cache: Redis
+    body: ImageModel, user: User, session: AsyncSession, cache: Redis
 ) -> Image:
     """
     Creates a new image.
@@ -59,7 +59,7 @@ async def create_image(
     :rtype: Image
     """
     result = await cloudinary_service.upload_image(
-        file.file, user.username, file.filename
+        body.file.file, user.username, body.file.filename
     )
     image_url = await cloudinary_service.get_image_url(result)
     image = Image(description=body.description, url=image_url, user_id=user.id)

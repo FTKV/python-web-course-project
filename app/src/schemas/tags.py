@@ -10,24 +10,20 @@ from pydantic import (
     BaseModel,
     UUID4,
     ConfigDict,
-    StringConstraints,
 )
 from pydantic import BaseModel, Field, UUID4, ConfigDict
 
 
-TagTitleType = Annotated[
-    str,
-    StringConstraints(
-        min_length=2,
-        max_length=49,
-        strip_whitespace=True,
-        pattern=r"^[a-zA-Z0-9_.-]+$",
-    ),
-]
-
-
 class TagModel(BaseModel):
-    title: TagTitleType = Field()
+    title: Annotated[
+        str,
+        Field(
+            min_length=2,
+            max_length=49,
+            strip_whitespace=True,
+            pattern=r"^[a-zA-Z0-9_.-]+$",
+        ),
+    ] = Field()
 
 
 class TagResponse(TagModel):

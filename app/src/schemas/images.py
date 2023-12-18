@@ -3,34 +3,53 @@ Module of images' schemas
 """
 
 
-from enum import Enum
-from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+import json
 from typing import Annotated, List
 
-from fastapi import Form
+from fastapi import UploadFile, File
 from pydantic import (
     BaseModel,
     HttpUrl,
     UUID4,
     ConfigDict,
     conlist,
+    field_validator,
 )
-from src.schemas.tags import TagTitleType, TagResponse
+from src.schemas.tags import TagModel, TagResponse
+from src.utils.as_form import as_form
 
 
 MAX_NUMBER_OF_TAGS_PER_IMAGE = 5
 
 
+@as_form
 class ImageModel(BaseModel):
-    description: str | None
-    tags: conlist(TagTitleType, max_length=MAX_NUMBER_OF_TAGS_PER_IMAGE) | None
+    file: Annotated[UploadFile, File()]
+    description: str | None = None
+    tags: conlist(str, max_length=MAX_NUMBER_OF_TAGS_PER_IMAGE) = None
 
+    @field_validator("tags", mode="before")
+    def check_tags_before(cls, v):
+        if not v:
+            return None
+        v = list(set(v[0].split(",")))
+        tags = []
+        for tag_title in v:
+            TagModel.model_validate({"title": tag_title})
+            tags.append(tag_title)
+        return tags
 
-@dataclass
-class ImageCreateForm:
-    description: Annotated[str | None, Form(...)] = None
-    tags: Annotated[List[str | None], Form(...)] = None
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_to_json
+
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
 
 
 class ImageDb(BaseModel):
