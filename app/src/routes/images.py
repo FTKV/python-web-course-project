@@ -3,12 +3,10 @@ Module of images' routes
 """
 
 
-from dataclasses import asdict
 from typing import List
 
 from pydantic import UUID4
-from typing import Annotated
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query
+from fastapi import APIRouter, HTTPException, Depends, status, Query
 from fastapi.responses import FileResponse
 from redis.asyncio.client import Redis
 from sqlalchemy.engine.result import ScalarResult
@@ -25,7 +23,6 @@ from src.services.roles import RoleAccess
 from src.services.qr_code import generate_qr_code
 from src.schemas.images import (
     ImageModel,
-    ImageCreateForm,
     ImageDb,
     ImageDescriptionModel,
     CloudinaryTransformations,
@@ -48,8 +45,7 @@ allowed_operations_for_all = RoleAccess([Role.administrator])
     dependencies=[Depends(allowed_operations_for_self)],
 )
 async def create_image(
-    file: Annotated[UploadFile, File()],
-    data: ImageCreateForm = Depends(),
+    data: ImageModel = Depends(ImageModel.as_form),
     user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
@@ -70,19 +66,12 @@ async def create_image(
     :return: Newly created image of the current user.
     :rtype: Image
     """
-    try:
-        if data.tags:
-            if data.tags[0]:
-                data.tags = list(set(data.tags[0].split(",")))
-            else:
-                data.tags = None
-        data = ImageModel(**asdict(data))
-    except Exception as error_message:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error_message),
-        )
-    image = await repository_images.create_image(file, data, user, session, cache)
+    # if data.tags:
+    #     if data.tags[0]:
+    #         data.tags = list(set(data.tags[0].split(",")))
+    #     else:
+    #         data.tags = None
+    image = await repository_images.create_image(data, user, session, cache)
     return image
 
 

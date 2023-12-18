@@ -3,16 +3,12 @@ Module of authentication routes
 """
 
 
-from dataclasses import asdict
 import re
-from typing import Annotated
 
 from fastapi import (
     APIRouter,
     HTTPException,
     Depends,
-    UploadFile,
-    File,
     Security,
     BackgroundTasks,
     Request,
