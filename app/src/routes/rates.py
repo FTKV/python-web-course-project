@@ -91,15 +91,15 @@ async def read_all_avg_rates(
         Depends(auth_service.get_current_user),
     ],
 )
-async def delete_rate_to_photo(
+async def delete_rate_to_image(
     rate_id: UUID4 | int, session: AsyncSession = Depends(get_session)
 ):
     """
-    Deletes a rate to photo.
+    Deletes a rate to image.
 
     :param rate_id: UUID4 | int: Specify the rate id that will be deleted
     :param session: AsyncSession: Pass the session to the repository
     :return: A boolean value
     """
 
-    return await repository_rates.delete_rate_to_photo(rate_id, session)
+    return await repository_rates.delete_rate_to_image(rate_id, session)

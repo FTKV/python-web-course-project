@@ -28,12 +28,12 @@ MAX_NUMBER_OF_TAGS_PER_IMAGE = 5
 class ImageModel(BaseModel):
     file: Annotated[UploadFile, File()]
     description: str | None = None
-    tags: conlist(str, max_length=MAX_NUMBER_OF_TAGS_PER_IMAGE) = None
+    tags: conlist(str, max_length=MAX_NUMBER_OF_TAGS_PER_IMAGE) = []
 
     @field_validator("tags", mode="before")
     def check_tags_before(cls, v):
-        if not v:
-            return None
+        if not v[0]:
+            return []
         v = list(set(v[0].split(",")))
         tags = []
         for tag_title in v:

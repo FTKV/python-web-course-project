@@ -15,7 +15,7 @@ from src.schemas.rates import RateModel, RateImageResponse
 from src.repository.images import read_image
 from src.database.connect_db import get_session, get_redis_db1
 
-async def read_all_rates_to_photo(
+async def read_all_rates_to_image(
     image_id: UUID4 | int,
     offset: int,
     limit: int,
@@ -76,19 +76,19 @@ async def read_all_user_rates(
     return rates.scalars()
 
 
-async def read_avg_rate_to_photo(
+async def read_avg_rate_to_image(
     image_id: UUID4 | int,
     session: AsyncSession,
     cache: Redis
     ) -> RateImageResponse | None :
 
     """
-    Returns the average rate of a photo.
+    Returns the average rate of a image.
     
     :param image_id: UUID4 | int: Specify the image id of which we want to get the average rating
     :param session: AsyncSession: Pass the session to the function
     :param cache: Redis: Pass the redis cache to the function
-    :return: The average rate of the photo
+    :return: The average rate of the image
     """
     stmt = select(func.avg(Rate.rate)).where(Rate.image_id == image_id)
     avg_rate = await session.execute(stmt)
@@ -115,51 +115,51 @@ async def read_all_avg_rates(
     stmt = stmt.offset(offset).limit(limit)
     all_image_id = await session.execute(stmt)
     all_image_id = all_image_id.scalars().all()
-    table_rates = [await read_avg_rate_to_photo(image_id, session, cache) for image_id in all_image_id]
+    table_rates = [await read_avg_rate_to_image(image_id, session, cache) for image_id in all_image_id]
     sort_table_rates = sorted(table_rates, key = lambda x: 
         (x.avg_rate is None, -x.avg_rate if x.avg_rate is not None else None), reverse=False)
 
     return sort_table_rates
 
 
-async def create_rate_to_photo(
+async def create_rate_to_image(
     image_id: UUID4 | int,
     body: RateModel,
     user: User,
     session: AsyncSession) -> Rate | None:
     """
-    Creates a rate to photo.
+    Creates a rate to image.
     
     :param image_id: UUID4 | int: Get the image from the database
     :param body: RateModel: Get the rate value from the request body
     :param user: User: Get the id of the user who is logged in
     :param session: AsyncSession: Create a database session
-    :return: A rate object if the photo exists,
+    :return: A rate object if the image exists,
     """
-    photo = await session.get(Image, image_id)
-    if photo and photo.user_id != user.id:
+    image = await session.get(Image, image_id)
+    if image and image.user_id != user.id:
         stmt = select(Rate).filter(
         and_(Rate.image_id == image_id, Rate.user_id == user.id)
         )
         rate = await session.execute(stmt)
         rate = rate.scalar()
         if not rate :
-            rate_photo = Rate(image_id=image_id,
+            rate_image = Rate(image_id=image_id,
                       rate=body.rate,
                       user_id=user.id)
-            session.add(rate_photo)
+            session.add(rate_image)
             await session.commit()
-            await session.refresh(rate_photo)
-            return rate_photo
+            await session.refresh(rate_image)
+            return rate_image
     return None
 
 
-async def delete_rate_to_photo(
+async def delete_rate_to_image(
     rate_id: UUID4 | int,
     session: AsyncSession
 ) -> Rate | None:
     """
-    Deletes a rate to photo.
+    Deletes a rate to image.
     
     :param rate_id: UUID4 | int: Specify which rate to delete
     :param session: AsyncSession: Pass the session to the function

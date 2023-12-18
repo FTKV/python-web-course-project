@@ -12,7 +12,7 @@ from src.database.models import Comment, User
 from src.schemas.comments import CommentModel
 
 
-async def read_all_comments_to_photo(
+async def read_all_comments_to_image(
     image_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
 ) -> ScalarResult:
     """
@@ -94,7 +94,7 @@ async def read_all_user_comments(
     return comments.scalars()
 
 
-async def create_comment_to_photo(
+async def create_comment_to_image(
     image_id: UUID4 | int, body: CommentModel, user: User, session: AsyncSession
 ) -> Comment | None:
     """
