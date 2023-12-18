@@ -384,7 +384,7 @@ async def delete_tag_from_image(
     response_model=List[CommentResponse],
     dependencies=[Depends(allowed_operations_for_self)],
 )
-async def read_all_comments_to_photo(
+async def read_all_comments_to_image(
     image_id: UUID4 | int,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=1000),
@@ -393,7 +393,7 @@ async def read_all_comments_to_photo(
     """
     Returns a list of comments for the specified image.
 
-    :param image_id: UUID4 | int: Specify the image id of the photo to which we want to add a comment
+    :param image_id: UUID4 | int: Specify the image id of the image to which we want to add a comment
     :param offset: int: Specify the offset from which to start returning comments
     :param ge: Set a minimum value for the parameter
     :param limit: int: Limit the amount of comments that are returned
@@ -402,9 +402,9 @@ async def read_all_comments_to_photo(
     :param user: User: Get the current user
     :param session: AsyncSession: Create a new session to the database
     :param : Get the user who is logged in
-    :return: A list of comments to the photo
+    :return: A list of comments to the image
     """
-    return await repository_comments.read_all_comments_to_photo(
+    return await repository_comments.read_all_comments_to_image(
         image_id, offset, limit, session
     )
 
@@ -415,7 +415,7 @@ async def read_all_comments_to_photo(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operations_for_self)],
 )
-async def create_comment_to_photo(
+async def create_comment_to_image(
     image_id: UUID4 | int,
     body: CommentModel,
     current_user: User = Depends(auth_service.get_current_user),
@@ -425,12 +425,12 @@ async def create_comment_to_photo(
     Creates a comment to an image.
 
     :param image_id: UUID4 | int: Specify the image id that the comment will be added to
-    :param body: CommentModel: Create a comment to the photo
+    :param body: CommentModel: Create a comment to the image
     :param current_user: User: Get the current user from the auth_service
     :param session: AsyncSession: Pass the session to the repository layer
     :return: A comment
     """
-    return await repository_comments.create_comment_to_photo(
+    return await repository_comments.create_comment_to_image(
         image_id, body, current_user, session
     )
 
@@ -442,14 +442,14 @@ async def create_comment_to_photo(
         Depends(allowed_operations_for_moderate),
     ],
 )
-async def read_all_rates_to_photo(
+async def read_all_rates_to_image(
     image_id: UUID4 | int,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=1000),
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Returns a list of all rates to photo.
+    Returns a list of all rates to image.
 
     :param image_id: UUID4 | int: Identify the image
     :param offset: int: Skip the first offset number of elements in the list
@@ -458,11 +458,11 @@ async def read_all_rates_to_photo(
     :param ge: Specify the minimum value of a parameter
     :param le: Limit the number of results returned
     :param session: AsyncSession: Get the database session
-    :param : Get the rate of a specific user to a photo
+    :param : Get the rate of a specific user to a image
     :return: A list of rates
     """
 
-    return await repository_rates.read_all_rates_to_photo(
+    return await repository_rates.read_all_rates_to_image(
         image_id, offset, limit, session
     )
 
@@ -473,14 +473,14 @@ async def read_all_rates_to_photo(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operations_for_self)],
 )
-async def create_rate_to_photo(
+async def create_rate_to_image(
     image_id: UUID4 | int,
     body: RateModel,
     current_user: User = Depends(auth_service.get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Creates a new rate to photo.
+    Creates a new rate to image.
 
     :param image_id: UUID4 | int: Specify the image that will be rated
     :param body: RateModel: Get the rate from the request body
@@ -489,13 +489,13 @@ async def create_rate_to_photo(
     :return: A ratemodel object
     """
 
-    rate = await repository_rates.create_rate_to_photo(
+    rate = await repository_rates.create_rate_to_image(
         image_id, body, current_user, session
     )
     if rate is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found or forbiden to rate twice or forbidden to rate your photo",
+            detail="Image not found or forbiden to rate twice or forbidden to rate your image",
         )
     return rate
 
@@ -505,18 +505,18 @@ async def create_rate_to_photo(
     response_model=RateImageResponse,
     dependencies=[Depends(allowed_operations_for_self)],
 )
-async def read_avg_rate_to_photo(
+async def read_avg_rate_to_image(
     image_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
 ):
     """
-    Returns the average rate of a photo given its id.
+    Returns the average rate of a image given its id.
 
-    :param image_id: UUID4 | int: Specify the image_id of the photo to be rated
+    :param image_id: UUID4 | int: Specify the image_id of the image to be rated
     :param session: AsyncSession: Pass the session to the repository layer
-    :param cache: Redis: Get the average rate of a photo
-    :param : Get the rate of a photo
-    :return: The average rate of a photo given its id
+    :param cache: Redis: Get the average rate of a image
+    :param : Get the rate of a image
+    :return: The average rate of a image given its id
     """
-    return await repository_rates.read_avg_rate_to_photo(image_id, session, cache)
+    return await repository_rates.read_avg_rate_to_image(image_id, session, cache)

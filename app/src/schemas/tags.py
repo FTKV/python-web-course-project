@@ -20,7 +20,8 @@ class TagModel(BaseModel):
         Field(
             min_length=2,
             max_length=49,
-            strip_whitespace=True,
+            json_schema_extra={'strip_whitespace': True},#
+            #strip_whitespace=True,
             pattern=r"^[a-zA-Z0-9_.-]+$",
         ),
     ] = Field()
