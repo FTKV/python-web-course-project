@@ -66,11 +66,6 @@ async def create_image(
     :return: Newly created image of the current user.
     :rtype: Image
     """
-    # if data.tags:
-    #     if data.tags[0]:
-    #         data.tags = list(set(data.tags[0].split(",")))
-    #     else:
-    #         data.tags = None
     image = await repository_images.create_image(data, user, session, cache)
     return image
 

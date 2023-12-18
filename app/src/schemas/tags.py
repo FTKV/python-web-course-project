@@ -6,18 +6,14 @@ Module of tags' schemas
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import (
-    BaseModel,
-    UUID4,
-    ConfigDict,
-)
+from pydantic import BaseModel, UUID4, ConfigDict, StringConstraints
 from pydantic import BaseModel, Field, UUID4, ConfigDict
 
 
 class TagModel(BaseModel):
     title: Annotated[
         str,
-        Field(
+        StringConstraints(
             min_length=2,
             max_length=49,
             strip_whitespace=True,
@@ -31,4 +27,5 @@ class TagResponse(TagModel):
 
     id: UUID4 | int
     created_at: datetime
+    updated_at: datetime
     user_id: UUID4 | int

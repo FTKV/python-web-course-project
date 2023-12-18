@@ -31,11 +31,27 @@ from src.conf.config import settings
 Base = declarative_base()
 
 
-def async_in_sync(func):
-    async def wrapped(*args, **kwargs):
-        return await func(*args, **kwargs)
+class IdAbstract(Base):
+    __abstract__ = True
+    id: Mapped[UUID | int] = (
+        mapped_column(Integer, primary_key=True)
+        if settings.test
+        else mapped_column(
+            UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
+        )
+    )
 
-    return wrapped
+
+class CreatedAtUpdatedAtAbstract(Base):
+    __abstract__ = True
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
 
 class Role(enum.Enum):
@@ -52,16 +68,9 @@ image_tag_m2m = Table(
 )
 
 
-class User(Base):
+class User(IdAbstract, CreatedAtUpdatedAtAbstract):
     __tablename__ = "users"
     __mapper_args__ = {"eager_defaults": True}
-    id: Mapped[UUID | int] = (
-        mapped_column(Integer, primary_key=True)
-        if settings.test
-        else mapped_column(
-            UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
-        )
-    )
     username: Mapped[str] = mapped_column(String(254), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(254), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(60), nullable=False)
@@ -69,14 +78,6 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String(254), nullable=True)
     phone: Mapped[str] = mapped_column(String(38), nullable=True)
     birthday: Mapped[date] = mapped_column(Date(), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
     avatar: Mapped[str] = mapped_column(String(254), nullable=True)
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.user)
     is_email_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -95,26 +96,11 @@ class User(Base):
         return self.is_email_confirmed or self.is_password_valid
 
 
-class Image(Base):
+class Image(IdAbstract, CreatedAtUpdatedAtAbstract):
     __tablename__ = "images"
     __mapper_args__ = {"eager_defaults": True}
-    id: Mapped[UUID | int] = (
-        mapped_column(Integer, primary_key=True)
-        if settings.test
-        else mapped_column(
-            UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
-        )
-    )
     url: Mapped[str] = mapped_column(String(1024), nullable=False)
     description: Mapped[str] = mapped_column(String(1024), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
     user_id: Mapped[UUID | int] = (
         mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
         if settings.test
@@ -130,7 +116,7 @@ class Image(Base):
     rates: Mapped[List["Rate"]] = relationship("Rate", back_populates="image")
 
 
-class Comment(Base):
+class Comment(CreatedAtUpdatedAtAbstract):
     __tablename__ = "comments"
     __mapper_args__ = {"eager_defaults": True}
     __table_args__ = (CheckConstraint("parent_id != id", name="check_parent_id"),)
@@ -142,14 +128,6 @@ class Comment(Base):
         )
     )
     text: Mapped[str] = mapped_column(String(2048), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
     user_id: Mapped[UUID | int] = (
         mapped_column(
             Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -179,20 +157,10 @@ class Comment(Base):
     children = relationship("Comment", back_populates="parent")
 
 
-class Tag(Base):
+class Tag(IdAbstract, CreatedAtUpdatedAtAbstract):
     __tablename__ = "tags"
     __mapper_args__ = {"eager_defaults": True}
-    id: Mapped[UUID | int] = (
-        mapped_column(Integer, primary_key=True)
-        if settings.test
-        else mapped_column(
-            UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
-        )
-    )
     title: Mapped[str] = mapped_column(String(49), nullable=False, unique=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
     user_id: Mapped[UUID | int] = (
         mapped_column(
             Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -213,26 +181,11 @@ class Tag(Base):
         return f"#{self.title}"
 
 
-class Rate(Base):
+class Rate(IdAbstract, CreatedAtUpdatedAtAbstract):
     __tablename__ = "rates"
     __mapper_args__ = {"eager_defaults": True}
     __table_args__ = (CheckConstraint("rate >= 1 AND rate <= 5", name="check_rate"),)
-    id: Mapped[UUID | int] = (
-        mapped_column(Integer, primary_key=True)
-        if settings.test
-        else mapped_column(
-            UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
-        )
-    )
     rate: Mapped[int] = mapped_column(Integer, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
     user_id: Mapped[UUID | int] = (
         mapped_column(
             Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True
