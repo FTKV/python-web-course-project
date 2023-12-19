@@ -11,11 +11,7 @@ async def test_signup_user(client, user, monkeypatch):
     monkeypatch.setattr("fastapi.BackgroundTasks.add_task", mock_add_task)
     response = await client.post(
         "/api/auth/signup",
-        data={
-            "username": user.get("username"),
-            "email": user.get("email"),
-            "password": user.get("password"),
-        },
+        data=user,
     )
     assert response.status_code == 201, response.text
     mock_add_task.assert_called_once()
