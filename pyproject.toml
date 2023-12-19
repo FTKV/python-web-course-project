@@ -2,7 +2,7 @@
 name = "PhotoShare_API"
 version = "0.1.0"
 description = ""
-authors = ["FTKV <mthkvv@gmail.com>"]
+authors = ["Virtuoso Developers"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
