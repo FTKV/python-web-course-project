@@ -75,31 +75,33 @@ async def read_all_user_rates(
     rates = await session.execute(stmt)
     return rates.scalars()
 
-
 async def read_avg_rate_to_image(
     image_id: UUID4 | int,
     session: AsyncSession,
-    cache: Redis
-    ) -> RateImageResponse | None :
-
+) -> RateImageResponse | None:
     """
-    Returns the average rate of a image.
-    
-    :param image_id: UUID4 | int: Specify the image id of which we want to get the average rating
-    :param session: AsyncSession: Pass the session to the function
-    :param cache: Redis: Pass the redis cache to the function
-    :return: The average rate of the image
+    Returns the average rate to an image.
+
+    :param image_id: UUID4 | int: Identify the image that is being rated
+    :param session: AsyncSession: Create a connection to the database
+    :param : Get the average rate of an image
+    :return: A rateimageresponse object with the image and avg_rate fields
+    :doc-author: Trelent
     """
     stmt = select(func.avg(Rate.rate)).where(Rate.image_id == image_id)
-    avg_rate = await session.execute(stmt)
-    image = await read_image(image_id=image_id, session=session, cache=cache)
-    return RateImageResponse(image = image, avg_rate=avg_rate.scalar())
+    avg_rate_result = await session.execute(stmt)
+    avg_rate = avg_rate_result.scalar()
+    #image = await read_image(image_id=image_id, session=session)
+    stmt = select(Image).filter(Image.id == image_id)
+    image = await session.execute(stmt)
+    image = image.scalar()
+    return RateImageResponse(image=image, avg_rate=avg_rate)
+
 
 async def read_all_avg_rates(
     offset: int,
     limit: int,
-    session: AsyncSession,
-    cache: Redis) -> List[RateImageResponse] | None:
+    session: AsyncSession)-> List[RateImageResponse] | None:
 
     """
     Returns a list of Image objects by average rate rating.
@@ -108,14 +110,13 @@ async def read_all_avg_rates(
     :param offset: int: Specify the number of rows to skip
     :param limit: int: Limit the number of results returned
     :param session: AsyncSession: Pass the session to the function
-    :param cache: Redis: Pass the cache to the function
     :return: A list of image objects and rates
     """
     stmt = select(Image.id)
     stmt = stmt.offset(offset).limit(limit)
     all_image_id = await session.execute(stmt)
     all_image_id = all_image_id.scalars().all()
-    table_rates = [await read_avg_rate_to_image(image_id, session, cache) for image_id in all_image_id]
+    table_rates = [await read_avg_rate_to_image(image_id, session) for image_id in all_image_id]
     sort_table_rates = sorted(table_rates, key = lambda x: 
         (x.avg_rate is None, -x.avg_rate if x.avg_rate is not None else None), reverse=False)
 

@@ -503,7 +503,7 @@ async def create_rate_to_image(
 async def read_avg_rate_to_image(
     image_id: UUID4 | int,
     session: AsyncSession = Depends(get_session),
-    cache: Redis = Depends(get_redis_db1),
+    #cache: Redis = Depends(get_redis_db1),#####
 ):
     """
     Returns the average rate of a image given its id.
@@ -514,4 +514,4 @@ async def read_avg_rate_to_image(
     :param : Get the rate of a image
     :return: The average rate of a image given its id
     """
-    return await repository_rates.read_avg_rate_to_image(image_id, session, cache)
+    return await repository_rates.read_avg_rate_to_image(image_id, session) ######, cache)
