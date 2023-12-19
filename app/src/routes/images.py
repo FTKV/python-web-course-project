@@ -42,6 +42,7 @@ allowed_operations_for_all = RoleAccess([Role.administrator])
 @router.post(
     "",
     response_model=ImageDb,
+    status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operations_for_self)],
 )
 async def create_image(
@@ -93,7 +94,7 @@ async def read_image(
     image = await repository_images.read_image(image_id, session, cache)
     if image is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Image not Found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
         )
     return image
 
@@ -120,7 +121,9 @@ async def get_qr_code(
     """
     image = await repository_images.read_image(image_id, session, cache)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+        )
     image_url = image.url
     generate_qr_code(image_url)
     return FileResponse(
@@ -166,9 +169,10 @@ async def update_image(
         ...,
         description="""List of Cloudinary image transformations:
         
+        none = ""
         crop (make avatar with face)= "c_thumb,g_face,h_200,w_200,z_1/f_auto/r_max/",
         resize (downscaling)= "ar_1.0,c_fill,h_250",
-        rotate (turn 10 degrees clockwise)= "a_10/",
+        rotate (turn 10 degrees clockwise [0-360])= "a_10/",
         improve = "e_improve:outdoor:29/",
         brightness = "e_brightness:80/",
         blackwhite = "e_blackwhite:49/",
@@ -197,10 +201,10 @@ async def update_image(
     """
     image = await repository_images.update_image(
         image_id,
+        transformations,
         user.id,
         session,
         cache,
-        transformations,
     )
     if image is None:
         raise HTTPException(

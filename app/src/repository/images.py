@@ -138,20 +138,23 @@ async def update_image(
     :type user_id: UUID | int
     :param session: Pass the current session to the function
     :type session: AsyncSession
+    :param cache: The Redis client.
+    :type cache: Redis
     :return: The Image object that was updated
     :rtype: Image | None
     """
     stmt = select(Image).filter(and_(Image.id == image_id, Image.user_id == user_id))
     image = await session.execute(stmt)
     image = image.scalar()
-    if image and transformations:
-        for i in CloudinaryTransformations:
-            if i.value in transformations:
-                url = await cloudinary_service.image_transformations(
-                    image.url,
-                    i.value,
-                )
-        image.url = url
+    if image:
+        if transformations:
+            for i in CloudinaryTransformations:
+                if i.value in transformations:
+                    image_url = await cloudinary_service.image_transformations(
+                        image.url,
+                        i.value,
+                    )
+        image.url = image_url
         await session.commit()
         await set_image_in_cache(image, cache)
     return image
