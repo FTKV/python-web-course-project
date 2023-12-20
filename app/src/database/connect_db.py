@@ -16,9 +16,6 @@ from sqlalchemy.ext.asyncio import (
 from src.conf.config import settings
 
 
-REDIS_DB_FOR_RATE_LIMITER = 0
-REDIS_DB_FOR_OBJECTS = 1
-
 engine: AsyncEngine = create_async_engine(
     settings.sqlalchemy_database_url_async,
     echo=False,
@@ -45,17 +42,19 @@ async def get_session():
 
 redis_db0 = redis.from_url(
     settings.redis_url,
-    db=REDIS_DB_FOR_RATE_LIMITER,
+    db=settings.redis_db_for_rate_limiter,
     encoding="utf-8",
     decode_responses=True,
 )
-pool_redis_db = redis.ConnectionPool.from_url(settings.redis_url + "/1")
+pool_redis_db = redis.ConnectionPool.from_url(
+    settings.redis_url + "/" + str(settings.redis_db_for_objects)
+)
 
 
 async def get_redis_db1():
     client = redis.Redis(
         connection_pool=pool_redis_db,
-        db=REDIS_DB_FOR_OBJECTS,
+        db=settings.redis_db_for_objects,
         encoding="utf-8",
         decode_responses=False,
     )
