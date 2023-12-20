@@ -2,6 +2,7 @@
 Module of rates' repository CRUD
 """
 
+
 from pydantic import UUID4
 from redis.asyncio.client import Redis
 from sqlalchemy import select, and_, desc, func
@@ -15,11 +16,10 @@ from src.schemas.rates import RateModel, RateImageResponse
 from src.repository.images import read_image
 from src.database.connect_db import get_session, get_redis_db1
 
+
 async def read_all_rates_to_image(
-    image_id: UUID4 | int,
-    offset: int,
-    limit: int,
-    session: AsyncSession) -> list[Rate] | None:
+    image_id: UUID4 | int, offset: int, limit: int, session: AsyncSession
+) -> list[Rate] | None:
     """
     Returns a list of Rate objects that are associated with the image_id parameter.
 
@@ -33,8 +33,8 @@ async def read_all_rates_to_image(
     stmt = stmt.order_by(desc(Rate.created_at))
     stmt = stmt.offset(offset).limit(limit)
     rates = await session.execute(stmt)
-
     return rates.scalars()
+
 
 async def read_all_my_rates(
     user: User, offset: int, limit: int, session: AsyncSession
@@ -53,6 +53,7 @@ async def read_all_my_rates(
     stmt = stmt.offset(offset).limit(limit)
     rates = await session.execute(stmt)
     return rates.scalars()
+
 
 async def read_all_user_rates(
     user_id: UUID4 | int,
@@ -79,57 +80,61 @@ async def read_all_user_rates(
 async def read_avg_rate_to_image(
     image_id: UUID4 | int,
     session: AsyncSession,
-    cache: Redis
-    ) -> RateImageResponse | None :
-
+) -> RateImageResponse | None:
     """
-    Returns the average rate of a image.
-    
-    :param image_id: UUID4 | int: Specify the image id of which we want to get the average rating
-    :param session: AsyncSession: Pass the session to the function
-    :param cache: Redis: Pass the redis cache to the function
-    :return: The average rate of the image
+    Returns the average rate to an image.
+
+    :param image_id: UUID4 | int: Identify the image that is being rated
+    :param session: AsyncSession: Create a connection to the database
+    :param : Get the average rate of an image
+    :return: A rateimageresponse object with the image and avg_rate fields
+    :doc-author: Trelent
     """
     stmt = select(func.avg(Rate.rate)).where(Rate.image_id == image_id)
-    avg_rate = await session.execute(stmt)
-    image = await read_image(image_id=image_id, session=session, cache=cache)
-    return RateImageResponse(image = image, avg_rate=avg_rate.scalar())
+    avg_rate_result = await session.execute(stmt)
+    avg_rate = avg_rate_result.scalar()
+    stmt = select(Image).filter(Image.id == image_id)
+    image = await session.execute(stmt)
+    image = image.scalar()
+    return RateImageResponse(image=image, avg_rate=avg_rate)
+
 
 async def read_all_avg_rates(
-    offset: int,
-    limit: int,
-    session: AsyncSession,
-    cache: Redis) -> List[RateImageResponse] | None:
-
+    offset: int, limit: int, session: AsyncSession
+) -> List[RateImageResponse] | None:
     """
     Returns a list of Image objects by average rate rating.
-    Each object contains an image and its average rate. 
-    
+    Each object contains an image and its average rate.
+
     :param offset: int: Specify the number of rows to skip
     :param limit: int: Limit the number of results returned
     :param session: AsyncSession: Pass the session to the function
-    :param cache: Redis: Pass the cache to the function
     :return: A list of image objects and rates
     """
     stmt = select(Image.id)
     stmt = stmt.offset(offset).limit(limit)
     all_image_id = await session.execute(stmt)
     all_image_id = all_image_id.scalars().all()
-    table_rates = [await read_avg_rate_to_image(image_id, session, cache) for image_id in all_image_id]
-    sort_table_rates = sorted(table_rates, key = lambda x: 
-        (x.avg_rate is None, -x.avg_rate if x.avg_rate is not None else None), reverse=False)
-
+    table_rates = [
+        await read_avg_rate_to_image(image_id, session) for image_id in all_image_id
+    ]
+    sort_table_rates = sorted(
+        table_rates,
+        key=lambda x: (
+            x.avg_rate is None,
+            -x.avg_rate if x.avg_rate is not None else None,
+        ),
+        reverse=False,
+    )
     return sort_table_rates
 
 
 async def create_rate_to_image(
-    image_id: UUID4 | int,
-    body: RateModel,
-    user: User,
-    session: AsyncSession) -> Rate | None:
+    image_id: UUID4 | int, body: RateModel, user: User, session: AsyncSession
+) -> Rate | None:
     """
     Creates a rate to image.
-    
+
     :param image_id: UUID4 | int: Get the image from the database
     :param body: RateModel: Get the rate value from the request body
     :param user: User: Get the id of the user who is logged in
@@ -139,14 +144,12 @@ async def create_rate_to_image(
     image = await session.get(Image, image_id)
     if image and image.user_id != user.id:
         stmt = select(Rate).filter(
-        and_(Rate.image_id == image_id, Rate.user_id == user.id)
+            and_(Rate.image_id == image_id, Rate.user_id == user.id)
         )
         rate = await session.execute(stmt)
         rate = rate.scalar()
-        if not rate :
-            rate_image = Rate(image_id=image_id,
-                      rate=body.rate,
-                      user_id=user.id)
+        if not rate:
+            rate_image = Rate(image_id=image_id, rate=body.rate, user_id=user.id)
             session.add(rate_image)
             await session.commit()
             await session.refresh(rate_image)
@@ -155,12 +158,11 @@ async def create_rate_to_image(
 
 
 async def delete_rate_to_image(
-    rate_id: UUID4 | int,
-    session: AsyncSession
+    rate_id: UUID4 | int, session: AsyncSession
 ) -> Rate | None:
     """
     Deletes a rate to image.
-    
+
     :param rate_id: UUID4 | int: Specify which rate to delete
     :param session: AsyncSession: Pass the session to the function
     :return: The rate object if the rate was deleted,

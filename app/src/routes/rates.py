@@ -58,11 +58,10 @@ async def read_all_my_rates(
 @router.get(
     "/avg_all",
     response_model=List[RateImageResponse],
-    dependencies=[Depends(allowed_operations_for_self)],
+    dependencies=[Depends(allowed_operations_for_moderate)],
 )
 async def read_all_avg_rates(
     session: AsyncSession = Depends(get_session),
-    cache: Redis = Depends(get_redis_db1),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=1000),
 ):
@@ -70,7 +69,6 @@ async def read_all_avg_rates(
     Returns a list of all the average rates in the database.
 
     :param session: AsyncSession: Get the database session
-    :param cache: Redis: Get the redis session to be used in the function
     :param offset: int: Specify the number of records to skip
     :param ge: Specify a minimum value for the parameter
     :param limit: int: Limit the number of results returned
@@ -79,17 +77,14 @@ async def read_all_avg_rates(
     :param : Specify the number of records to skip
     :return: A list of all the average rates in the database
     """
-    return await repository_rates.read_all_avg_rates(offset, limit, session, cache)
+    return await repository_rates.read_all_avg_rates(offset, limit, session)
 
 
 @router.delete(
     "/{rate_id}",
     response_model=RateResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[
-        Depends(allowed_operations_for_moderate),
-        Depends(auth_service.get_current_user),
-    ],
+    dependencies=[Depends(allowed_operations_for_moderate)],
 )
 async def delete_rate_to_image(
     rate_id: UUID4 | int, session: AsyncSession = Depends(get_session)

@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     sqlalchemy_database_url_async: str
     redis_url: str
     redis_expire: int
+    redis_db_for_rate_limiter: int
+    redis_db_for_objects: int
     rate_limiter_times: int
     rate_limiter_seconds: int
     mail_server: str

@@ -1,46 +1,23 @@
-# python-web-hw14
+# Python WEB course project by Virtuoso Developers
 
-## Домашнє завдання #14
+The task (in Ukrainian):
+https://docs.google.com/document/d/11mdaddCwhgKPPWgTnQgJNolNUV_DwiZkjj7vC5En3vw/edit
 
-У цьому домашньому завданні ми продовжуємо доопрацьовувати наш REST API застосунок із домашнього завдання 13.
+## Getting started
 
-### Завдання
+This guide will take you through the steps to set up and run the project on your device.
 
-За допомогою Sphinx створіть документацію для вашого домашнього завдання. Для цього додайте в основних модулях до необхідних функцій і методів класів рядки docstrings.
-Покрийте модульними тестами модулі репозиторію домашнього завдання, використовуючи фреймворк Unittest. За основу візьміть приклад із конспекту для модуля tests/test_unit_repository_notes.py
-Покрийте функціональними тестами будь-який маршрут на вибір з вашого домашнього завдання, використовуючи фреймворк pytest.
+### Installation
 
-### Додаткове завдання
+Steps to install the project in a standart way:
 
-Покрийте ваше домашнє завдання тестами більш ніж на 95%. Для контролю використовуйте пакет pytest-cov
+1. Clone the repository: https://github.com/FTKV/python-web-course-project
 
-## Реалізація
+2. Go to the project directory: `cd python-web-course-project`
 
-Для запуску необхідно виконати наступні дії:
+3. Run `poetry shell` and `poetry install`
 
-1. docker-compose --env-file app/.env up -d
-
-2. перейти до app
-
-3. alembic init migrations
-
-4. Add to env:
-
-```
-from src.conf.config import settings
-from src.database.models import Base
-...
-target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", settings.sqlalchemy_database_url_sync)
-```
-
-5. alembic revision --autogenerate -m "Init"
-
-6. alembic upgrade head
-
-7. python main.py
-
-В папці app проекту необхідно створити та налаштувати файл .env у такому форматі:
+4. Create, fill with settings and put in `app` folder file `.env` with following format:
 
 ```
 API_NAME=PhotoShare API
@@ -69,6 +46,8 @@ REDIS_USER=...
 REDIS_PASSWORD=...
 REDIS_URL=${REDIS_PROTOCOL}://${REDIS_USER}:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
 REDIS_EXPIRE=3600
+REDIS_DB_FOR_RATE_LIMITER=0
+REDIS_DB_FOR_OBJECTS=1
 
 RATE_LIMITER_TIMES=2
 RATE_LIMITER_SECONDS=5
@@ -87,8 +66,12 @@ CLOUDINARY_API_SECRET=...
 TEST=False
 ```
 
-Щоб записати таблицю в БД, можно обійтись без алембіка, запустивши tests/create_all.py
+5. If you want to run the project locally and you already have running instances of Postgres DB and Redis DB then go to next point. Otherwise, you can run Postgres DB and Redis DB with Docker by `docker-compose --env-file app/.env up -d`
 
-Щоб заповнити базу фейковими контактами, змініть тимчасово у .env параметр RATE_LIMITER_TIMES на значення, що відповідає NUMBER_OF_CONTACTS у tests/seed.py, щоб пом’якшити обмеження Ratelimiter, зареєструйтесь через Swagger або Postman, скопіюйте email та passowrd користувача у tests/seed.py, та запустіть.
+6. Go to app folder `cd app` and run `alembic upgrade head`
 
-Для запуску тестів за допомогою pytest (наприклад, pytest tests/test_routes_auth.py -v aбо pytest --cov) потрібно у app/.env встановити параметр TEST у True (для unit тестів не обов’язково) і збільшити RATE_LIMITER_TIMES.
+7. Run `python main.py` and open http://127.0.0.1:8000 or http://127.0.0.1:8000/docs to open the project's Swagger documentation (The API protocol, host and port you can change with .env)
+
+### The authors
+
+Virtuoso Developers team
