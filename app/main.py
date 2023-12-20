@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import pathlib
 from time import time
 
-from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -205,9 +205,25 @@ BASE_DIR = pathlib.Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
 
+class StaticFilesCache(StaticFiles):
+    def __init__(
+        self,
+        *args,
+        cachecontrol="public, max-age=31536000, s-maxage=31536000, immutable",
+        **kwargs,
+    ):
+        self.cachecontrol = cachecontrol
+        super().__init__(*args, **kwargs)
+
+    def file_response(self, *args, **kwargs) -> Response:
+        resp: Response = super().file_response(*args, **kwargs)
+        resp.headers.setdefault("Cache-Control", self.cachecontrol)
+        return resp
+
+
 app.mount(
     "/static",
-    StaticFiles(directory=STATIC_DIR),
+    app=StaticFilesCache(directory=STATIC_DIR, cachecontrol="private, max-age=3600"),
     name="static",
 )
 
