@@ -122,7 +122,6 @@ celerybeat.pid
 
 # Environments
 .env
-app/.env_deploy
 .venv
 env/
 venv/
@@ -165,3 +164,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .DS_Store
+app/.env_deploy
