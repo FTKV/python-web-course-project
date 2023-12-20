@@ -70,8 +70,8 @@ TEST=False
 
 6. Go to app folder `cd app` and run `alembic upgrade head`
 
-7. Run main.py and open http://127.0.0.1:8000 or http://127.0.0.1:8000/docs to open the project's Swagger documentation (The API protocol, host and port you can change with .env)
+7. Run `python main.py` and open http://127.0.0.1:8000 or http://127.0.0.1:8000/docs to open the project's Swagger documentation (The API protocol, host and port you can change with .env)
 
 ### The authors
 
-Members of the Virtuoso Developers team
+Virtuoso Developers team
