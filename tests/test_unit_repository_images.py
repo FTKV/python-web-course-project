@@ -164,15 +164,8 @@ class TestUsersRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_add_tag_to_image(self):
         self.session.execute.return_value = MagicMock(spec=ChunkedIteratorResult)
-        self.session.execute.return_value.scalar.return_value = self.image
-        tag_title = "tag to add"
-
-        # repository_tags.read_tag = AsyncMock()
-        # repository_tags.read_tag.return_value = None
-        repository_tags.create_tag = AsyncMock()
-        repository_tags.create_tag.return_value = self.tag
-        self.image.tags = MagicMock()
-        self.image.tags.return_value = self.image.tags
+        self.session.execute.return_value.scalar.side_effect = [self.image, self.tag]
+        tag_title = "test"
         result = await add_tag_to_image(
             self.image.id,
             tag_title,
@@ -181,22 +174,21 @@ class TestUsersRepository(unittest.IsolatedAsyncioTestCase):
             self.session,
             self.redis_db,
         )
-        # self.assertEqual(result.tags, self.image.tags)
-
-        # assert result == self.image
-        # assert self.tag_title in self.image.tags
+        self.assertEqual(result, self.image)
+        self.assertEqual(result.tags, self.image.tags)
+        self.assertEqual(result.tags[0].title, tag_title)
         assert len(self.image.tags) <= MAX_NUMBER_OF_TAGS_PER_IMAGE
 
     async def test_delete_tag_from_image(self):
         self.session.execute.return_value = MagicMock(spec=ChunkedIteratorResult)
-        self.session.execute.return_value.scalar.return_value = self.image
-        self.tag_title = "tag to delete"
+        self.session.execute.return_value.scalar.side_effect = [self.image, self.tag]
+        self.tag_title = "test"
         result = await delete_tag_from_image(
             self.image.id, self.tag_title, self.user.id, self.session, self.redis_db
         )
-
-        assert result == self.image
-        assert self.tag_title not in self.image.tags
+        self.assertEqual(result, self.image)
+        self.assertEqual(result.tags, self.image.tags)
+        self.assertListEqual(result.tags, [])
 
 
 if __name__ == "__main__":
