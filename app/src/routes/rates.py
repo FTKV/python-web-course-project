@@ -4,17 +4,16 @@ Module of commentss' routes
 
 
 from pydantic import UUID4
-from redis.asyncio.client import Redis
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response
 
-from src.database.connect_db import get_session, get_redis_db1
+from src.database.connect_db import get_session
 from src.database.models import User, Role
 from src.repository import rates as repository_rates
-from src.schemas.rates import RateModel, RateResponse, RateImageResponse
+from src.schemas.rates import RateResponse, RateImageResponse
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 

@@ -5,7 +5,6 @@ Module of users' CRUD
 
 import pickle
 
-from fastapi import UploadFile
 from libgravatar import Gravatar
 from pydantic import EmailStr
 from redis.asyncio.client import Redis

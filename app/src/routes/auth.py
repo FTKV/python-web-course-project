@@ -25,12 +25,7 @@ from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connect_db import get_session, get_redis_db1
-from src.schemas.users import (
-    UserModel,
-    UserRequestEmail,
-    UserPasswordSetModel,
-    UserResponse,
-)
+from src.schemas.users import UserModel, UserResponse
 from src.schemas.tokens import TokenModel, TokenPasswordSetModel
 from src.repository import users as repository_users
 from src.services.auth import auth_service

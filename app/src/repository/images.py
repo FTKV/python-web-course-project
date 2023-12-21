@@ -2,9 +2,9 @@
 Module of images' CRUD
 """
 
+
 from enum import Enum
 import pickle
-from typing import List
 
 from fastapi import HTTPException, status
 from redis.asyncio.client import Redis

@@ -17,7 +17,7 @@ from pydantic import (
 )
 from typing import Annotated
 
-from fastapi import UploadFile, Form
+from fastapi import UploadFile
 
 from src.database.models import Role
 from src.utils.as_form import as_form
@@ -62,14 +62,6 @@ class UserUpdateModel(BaseModel):
         if isinstance(value, str):
             return cls(**json.loads(value))
         return value
-
-
-class UserRequestEmail(BaseModel):
-    email: EmailStr
-
-
-class UserPasswordSetModel(BaseModel):
-    password: str = Field(min_length=8, max_length=72)
 
 
 class UserSetRoleModel(BaseModel):

@@ -4,7 +4,7 @@ Module of comments' CRUD
 
 
 from pydantic import UUID4
-from sqlalchemy import select, and_, desc, func
+from sqlalchemy import select, and_, desc
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
