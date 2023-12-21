@@ -17,7 +17,7 @@ from pydantic import (
 )
 from typing import Annotated
 
-from fastapi import UploadFile
+from fastapi import UploadFile, Form
 
 from src.database.models import Role
 from src.utils.as_form import as_form

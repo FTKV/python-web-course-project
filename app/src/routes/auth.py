@@ -3,6 +3,7 @@ Module of authentication routes
 """
 
 
+from pydantic import EmailStr, SecretStr
 import re
 
 from fastapi import (
@@ -12,6 +13,7 @@ from fastapi import (
     Security,
     BackgroundTasks,
     Request,
+    Form,
     status,
 )
 from fastapi.security import (
@@ -209,7 +211,7 @@ async def refresh_token(
 async def request_verification_email(
     background_tasks: BackgroundTasks,
     request: Request,
-    body: UserRequestEmail,
+    email: EmailStr = Form(...),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -219,14 +221,14 @@ async def request_verification_email(
     :type background_tasks: BackgroundTasks
     :param request: The http request object.
     :type request: Request
-    :param body: The request body with an email to verify.
-    :type body: UserRequestEmail
+    :param email: The form with an email to verify.
+    :type email: EmailStr
     :param session: The database session.
     :type session: AsyncSession
     :return: The dict with a message.
     :rtype: dict
     """
-    user = await repository_users.get_user_by_email(body.email, session)
+    user = await repository_users.get_user_by_email(email, session)
     if user:
         if user.is_email_confirmed:
             return {"message": "The email is already confirmed"}
@@ -280,14 +282,14 @@ async def confirm_email(
 async def request_password_reset_email(
     background_tasks: BackgroundTasks,
     request: Request,
-    body: UserRequestEmail,
+    email: EmailStr = Form(...),
     session: AsyncSession = Depends(get_session),
 ):
     """
     Handles a POST-operation to '/password_reset_email' auth subroute and sends an email for the user's password reset.
 
-    :param body: The request body with an user's email to reset password.
-    :type body: UserRequestEmail
+    :param body: The form with an user's email to reset password.
+    :type body: EmailStr
     :param background_tasks: The object for background tasks.
     :type background_tasks: BackgroundTasks
     :param request: The http request object.
@@ -297,7 +299,7 @@ async def request_password_reset_email(
     :return: The dict with a message.
     :rtype: dict
     """
-    user = await repository_users.get_user_by_email(body.email, session)
+    user = await repository_users.get_user_by_email(email, session)
     if user and user.is_email_confirmed:
         password_reset_token = await auth_service.create_password_reset_token(
             {"sub": user.email}
@@ -348,7 +350,7 @@ async def reset_password(
 
 @router.patch("/set_password")
 async def set_password(
-    body: UserPasswordSetModel,
+    password: SecretStr = Form(..., min_length=8, max_length=72),
     credentials: HTTPAuthorizationCredentials = Security(security),
     session: AsyncSession = Depends(get_session),
     cache: Redis = Depends(get_redis_db1),
@@ -376,7 +378,7 @@ async def set_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Set password error",
         )
-    body.password = auth_service.get_password_hash(body.password)
+    password = auth_service.get_password_hash(password.get_secret_value())
     await auth_service.blacklist_token(token, cache)
-    await repository_users.set_password(email, body.password, session, cache)
+    await repository_users.set_password(email, password, session, cache)
     return {"message": "The password has been reset"}

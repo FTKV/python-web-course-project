@@ -12,7 +12,7 @@ from src.database.connect_db import get_session
 from src.database.models import User, Role
 from src.repository import tags as repository_tags
 from src.schemas.tags import TagResponse
-from src.schemas.images import ImageDb
+from src.schemas.images import ImageResponse
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 
@@ -110,7 +110,7 @@ async def delete_tag(
 
 @router.get(
     "/{tag_title}/images",
-    response_model=List[ImageDb],
+    response_model=List[ImageResponse],
     dependencies=[Depends(allowed_operations_read_create)],
 )
 async def read_images_by_tag(

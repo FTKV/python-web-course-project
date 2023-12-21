@@ -1,6 +1,7 @@
 """
-module to work with QR-code
+Module to work with QR codes
 """
+
 
 import qrcode
 
@@ -26,4 +27,4 @@ def generate_qr_code(image_url: str) -> None:
 
     # Make QR-code object
     qr_code = qr.make_image(fill_color="black", back_color="white")
-    qr_code.save("static/qrcode.png")
+    qr_code.save("static/qr_code.png")
