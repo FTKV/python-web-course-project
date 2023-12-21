@@ -83,7 +83,6 @@ async def read_all_avg_rates(
 @router.delete(
     "/{rate_id}",
     response_model=RateResponse,
-    status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(allowed_operations_for_moderate)],
 )
 async def delete_rate_to_image(
@@ -96,5 +95,9 @@ async def delete_rate_to_image(
     :param session: AsyncSession: Pass the session to the repository
     :return: A boolean value
     """
-
-    return await repository_rates.delete_rate_to_image(rate_id, session)
+    rate = await repository_rates.delete_rate_to_image(rate_id, session)
+    if rate is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Rate not found"
+        )
+    return None

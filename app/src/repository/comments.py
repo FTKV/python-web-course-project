@@ -128,6 +128,8 @@ async def create_comment_to_comment(
     stmt = select(Comment).filter(Comment.id == comment_id)
     parent_comment = await session.execute(stmt)
     parent_comment = parent_comment.scalar()
+    if parent_comment is None:
+        return None
     if not parent_comment.parent_id:
         comment = Comment(
             image_id=parent_comment.image_id,
