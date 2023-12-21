@@ -40,6 +40,14 @@ async def test_read_all_rates_to_image(client, token):
     data = response.json()
     assert type(data) == list
 
+####from routes/images.py####
+@pytest.mark.anyio
+async def test_read_avg_rate_to_image(client, token):
+    response = await client.get(
+        f"/api/images/{image_id}/avg",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 404, response.text
 
 ###from routes/users.py####
 @pytest.mark.anyio
