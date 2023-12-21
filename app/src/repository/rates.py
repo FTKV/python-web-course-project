@@ -3,12 +3,12 @@ Module of rates' repository CRUD
 """
 
 
+from fastapi import HTTPException, status
 from pydantic import UUID4
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-
 
 from src.database.models import Rate, User, Image
 from src.schemas.rates import RateModel, RateImageResponse
@@ -93,7 +93,11 @@ async def read_avg_rate_to_image(
     stmt = select(Image).filter(Image.id == image_id)
     image = await session.execute(stmt)
     image = image.scalar()
+    if image is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+
     return RateImageResponse(image=image, avg_rate=avg_rate)
+
 
 
 async def read_all_avg_rates(
