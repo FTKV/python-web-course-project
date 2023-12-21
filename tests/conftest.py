@@ -123,27 +123,3 @@ def wrong_email():
 @pytest.fixture(scope="session")
 def new_password():
     return "0987654321"
-
-
-# @pytest.fixture(scope="session")
-# def contact_to_create():
-#     return {
-#         "first_name": "test",
-#         "last_name": "test",
-#         "email": "test@test.com",
-#         "phone": "1234567890",
-#         "birthday": str(date.today()),
-#         "address": "test",
-#     }
-
-
-# @pytest.fixture(scope="session")
-# def contact_to_update():
-#     return {
-#         "first_name": "new_test",
-#         "last_name": "new_test",
-#         "email": "new_test@test.com",
-#         "phone": "0987654321",
-#         "birthday": str(date.today()),
-#         "address": "new_test",
-#     }

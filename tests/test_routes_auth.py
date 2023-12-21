@@ -229,25 +229,6 @@ async def test_refresh_token(client, user):
     assert data["token_type"] == "bearer"
 
 
-# @pytest.mark.anyio
-# async def test_refresh_token_invalid(client, user):
-#     response = await client.post(
-#         "/api/auth/login",
-#         data={"username": user.get("email"), "password": user.get("password")},
-#     )
-#     data = response.json()
-#     token = await auth_service.create_refresh_token(
-#         {"sub": user.get("email")}, expires_delta=100
-#     )
-#     response = await client.get(
-#         "/api/auth/refresh_token",
-#         headers={"Authorization": f"Bearer {token}"},
-#     )
-#     assert response.status_code == 401, response.text
-#     data = response.json()
-#     assert data["detail"] == "Invalid refresh token"
-
-
 @pytest.mark.anyio
 async def test_refresh_token_wrong_email(client, wrong_email):
     token = await auth_service.create_refresh_token({"sub": wrong_email})
