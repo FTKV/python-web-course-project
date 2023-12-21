@@ -9,6 +9,7 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import Response
 
 from src.database.connect_db import get_session, get_redis_db1
 from src.database.models import User, Role
@@ -100,4 +101,5 @@ async def delete_rate_to_image(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Rate not found"
         )
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
