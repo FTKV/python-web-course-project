@@ -1,9 +1,9 @@
-.. Contacts API documentation master file, created by
+.. PhotoShare API documentation master file, created by
    sphinx-quickstart on Mon Nov 27 18:19:48 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Contacts API's documentation!
+Welcome to PhotoShare API's documentation!
 ========================================
 
 .. toctree::
@@ -19,9 +19,33 @@ REST API main
   :show-inheritance:
 
 
-REST API repository Contacts
+REST API repository Comments
 ============================
-.. automodule:: src.repository.contacts
+.. automodule:: src.repository.comments
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API repository Images
+============================
+.. automodule:: src.repository.images
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API repository Rates
+============================
+.. automodule:: src.repository.rates
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API repository Tags
+============================
+.. automodule:: src.repository.tags
   :members:
   :undoc-members:
   :show-inheritance:
@@ -43,9 +67,33 @@ REST API routes Auth
   :show-inheritance:
 
 
-REST API routes Contacts
+REST API routes Comments
 ========================
-.. automodule:: src.routes.contacts
+.. automodule:: src.routes.comments
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API routes Images
+========================
+.. automodule:: src.routes.images
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API routes Rates
+========================
+.. automodule:: src.routes.rates
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API routes Tags
+========================
+.. automodule:: src.routes.tags
   :members:
   :undoc-members:
   :show-inheritance:
@@ -67,9 +115,33 @@ REST API services Auth
   :show-inheritance:
 
 
+REST API services Cloudinary
+======================
+.. automodule:: src.services.cloudinary
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
 REST API services Email
 =======================
 .. automodule:: src.services.email
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API services QR Code
+=======================
+.. automodule:: src.services.qr_code
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+
+REST API services Roles
+=======================
+.. automodule:: src.services.roles
   :members:
   :undoc-members:
   :show-inheritance:

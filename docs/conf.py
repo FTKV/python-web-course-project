@@ -10,9 +10,9 @@ import sys
 
 sys.path.append(os.path.abspath("../app"))
 
-project = "Contacts API"
-copyright = "2023, Vadym Koliada"
-author = "Vadym Koliada"
+project = "PhotoShare API"
+copyright = "2023, Virtuoso Developers"
+author = "Virtuoso Developers"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
