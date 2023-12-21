@@ -4,9 +4,9 @@ Module of users' routes
 
 
 from pydantic import UUID4
-from typing import Annotated, List
+from typing import List
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query
+from fastapi import APIRouter, HTTPException, Depends, status, Query
 from redis.asyncio.client import Redis
 from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession

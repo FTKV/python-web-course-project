@@ -2,6 +2,7 @@
 Module of tags' CRUD
 """
 
+
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.engine.result import ScalarResult
