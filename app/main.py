@@ -5,6 +5,7 @@ Main module
 
 from contextlib import asynccontextmanager
 import pathlib
+import sys
 from time import time
 
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, status
@@ -29,9 +30,13 @@ async def lifespan(app: FastAPI):
     Handles lifespan events.
 
     """
-    await startup()
-    yield
-    await shutdown()
+    healthy_start = await startup()
+    if healthy_start:
+        yield
+        await shutdown()
+    else:
+        await engine.dispose()
+        sys.exit()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -42,9 +47,14 @@ async def startup():
     Handles startup events.
 
     """
+    try:
+        await redis_db0.ping()
+    except Exception:
+        return False
     await pool_redis_db.disconnect()
     await redis_db0.flushall()
     await FastAPILimiter.init(redis_db0)
+    return True
 
 
 async def shutdown():
@@ -261,4 +271,4 @@ async def read_root():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=settings.api_host, port=settings.api_port, reload=True)
+    uvicorn.run("main:app", host=settings.api_host, port=settings.api_port)
