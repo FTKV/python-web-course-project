@@ -4,7 +4,6 @@ Module of authentication routes
 
 
 from pydantic import EmailStr, SecretStr
-import re
 
 from fastapi import (
     APIRouter,
@@ -67,11 +66,6 @@ async def signup(
     :return: The dict with the newly created user and the message.
     :rtype: dict
     """
-    if not re.match(r"(?i)^(?!me$).*", data.username):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username shouldn't be just 'me'",
-        )
     user = await repository_users.get_user_by_email(data.email, session)
     if user:
         raise HTTPException(

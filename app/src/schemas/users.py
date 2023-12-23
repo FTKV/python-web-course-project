@@ -14,7 +14,9 @@ from pydantic import (
     UUID4,
     ConfigDict,
     SkipValidation,
+    field_validator,
 )
+import re
 from typing import Annotated
 
 from fastapi import UploadFile
@@ -33,6 +35,12 @@ class UserModel(BaseModel):
     phone: Annotated[str | None, Field(max_length=38)] = None
     birthday: date | None = None
     avatar: Annotated[UploadFile, SkipValidation] = None
+
+    @field_validator("username")
+    def check_username(cls, v):
+        if not re.match(r"(?i)^(?!me$).*", v):
+            raise ValueError("username shouldn't be just 'me'")
+        return v
 
     @classmethod
     def __get_validators__(cls):
